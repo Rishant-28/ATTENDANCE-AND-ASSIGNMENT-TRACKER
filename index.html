@@ -1306,6 +1306,8 @@ html[data-theme="dark"] .scan-card{background:#161c1d}html[data-theme="light"] .
 #lbv .lbv-ld{padding:30px;text-align:center;color:var(--mu);font-size:14px}
 </style>
 <style>
+.mk-n{position:relative}.mk-del{display:block;margin:4px auto 0;width:24px;height:24px;padding:0;border-radius:50%;font-size:11px;line-height:1;border:1px solid var(--bd);background:transparent;color:var(--mu);cursor:pointer}
+.mk-add{display:block;width:100%;margin-top:10px;padding:11px;border-radius:12px;border:1.5px dashed var(--ac);background:transparent;color:var(--ac);font:inherit;font-weight:700;cursor:pointer}
 #onb{position:fixed;inset:0;z-index:100000;display:none;flex-direction:column;align-items:center;justify-content:center;padding:max(14px,env(safe-area-inset-top)) 14px max(14px,env(safe-area-inset-bottom));background:radial-gradient(120% 80% at 50% 0%,color-mix(in srgb,var(--ac) 18%,var(--pbg,#f6f7fb)),var(--pbg,#f6f7fb));color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 #onb.on{display:flex}
 #onb *{box-sizing:border-box}
@@ -1365,8 +1367,8 @@ body.onb-custom #ttTools button[onclick^="loadPreset"]{display:none}
 #onb .ob-card.b1{z-index:2;transform:rotate(-6deg);opacity:1;transition:transform .38s,opacity .38s;pointer-events:none}
 #onb .ob-card.b2{z-index:1;transform:rotate(-12deg);opacity:1;transition:transform .38s,opacity .38s;pointer-events:none}
 #onb .ob-card.b1>*,#onb .ob-card.b2>*{visibility:hidden}
-#onb .ob-card.b1::before,#onb .ob-card.b2::before{content:'A\A♥';white-space:pre;position:absolute;left:14px;top:12px;font:800 20px/1.1 Georgia,serif;color:#e11d2e;text-align:center}
-#onb .ob-card.b2::before{content:'A\A♠';color:#111}
+#onb .ob-card.b1::before,#onb .ob-card.b2::before{content:'AAT\A♥';white-space:pre;position:absolute;left:14px;top:12px;font:800 17px/1.1 Georgia,serif;color:#e11d2e;text-align:center}
+#onb .ob-card.b2::before{content:'AAT\A♠';color:#111}
 #onb .ob-busy{flex:1;font-size:13px;color:var(--mu);padding:10px 12px;border:1px dashed var(--pbd);border-radius:12px}
 #onb .ob-sats{display:flex;gap:8px}
 #onb .ob-sats button{flex:1;padding:12px 0;font-weight:700}
@@ -4088,20 +4090,29 @@ asgSetMode(asgM);
 /* ===== Marks comparison (1st Insem / 2nd Insem / End Sem) ===== */
 let MKC=false,MKL=[];try{const r=localStorage.getItem('asgSubjects');if(r){const a=JSON.parse(r);if(Array.isArray(a)){MKC=true;MKL=a}}}catch(e){}
 let MK_SUBJ=MKC?MKL.filter(x=>!x.prac).map(x=>x.name):['COD','OS','CN','VM','SE','DSA'];
-const MK_DEF=MKC?['You','Friend 2','Friend 3','Friend 4']:['Vansh','Rishi','Dipanshu','Rishant'];
+const MK_OLD=['Vansh','Rishi','Dipanshu','Rishant'],MK_MAX=8;
+const mkIdx=()=>MK.names.map((_,j)=>j);
 const MK_EX=[['as','Assignment',20],['i1','1st Insem',40],['i2','2nd Insem',40],['es','End Sem',100]];
-let MK={names:MK_DEF.slice(),ex:{},ts:0},mkEdit=false,mkHad=false,MKDB=null,mkTimer=null,mkSel='i1';
+let MK={names:['You'],ex:{},ts:0},mkEdit=false,mkHad=false,MKDB=null,mkTimer=null,mkSel='i1';
 try{const q=localStorage.getItem('asgMkSel');if(MK_EX.some(x=>x[0]===q))mkSel=q}catch(e){}
 function mkNorm(){
   MK.credits=MK.credits||{};MK_SUBJ.forEach(x=>{const c=parseFloat(MK.credits[x]);MK.credits[x]=isFinite(c)&&c>0?c:3});
-  MK.prev=MK.prev||{};['cgpa','credits'].forEach(k=>{const a=MK.prev[k]||[];MK.prev[k]=[0,1,2,3].map(j=>a[j]==null?'':a[j])});
+  MK.prev=MK.prev||{};
   if(MK.marks){const es=MK.ex&&MK.ex.es,filled=es&&es.marks&&Object.values(es.marks).some(r=>(r||[]).some(v=>v!==''&&v!=null));
     if(!filled){MK.ex=MK.ex||{};MK.ex.es={max:MK.max||{},marks:MK.marks}}}   /* old single table = End Sem */
   delete MK.marks;delete MK.max;
-  const n=MK.names;MK.names=[0,1,2,3].map(j=>{const v=(n&&typeof n[j]==='string')?n[j]:'';return(!v||v==='Friend '+(j+1))?MK_DEF[j]:v});
+  let n=Array.isArray(MK.names)?MK.names.map(v=>typeof v==='string'?v:''):[];if(!n.length)n=['You'];n=n.slice(0,MK_MAX);MK.names=n;
   MK.ex=MK.ex||{};
   MK_EX.forEach(([id,,def])=>{const e=MK.ex[id]=MK.ex[id]||{};e.max=e.max||{};e.marks=e.marks||{};
-    MK_SUBJ.forEach(x=>{const m=parseFloat(e.max[x]);e.max[x]=isFinite(m)&&m>0?m:def;const a=e.marks[x]||[];e.marks[x]=[0,1,2,3].map(k=>a[k]==null?'':a[k])})})}
+    MK_SUBJ.forEach(x=>{const m=parseFloat(e.max[x]);e.max[x]=isFinite(m)&&m>0?m:def;const a=e.marks[x]||[];e.marks[x]=mkIdx().map(k=>a[k]==null?'':a[k])})});
+  ['cgpa','credits'].forEach(k=>{const a=MK.prev[k]||[];MK.prev[k]=mkIdx().map(j=>a[j]==null?'':a[j])});
+  /* the four built-in names are gone: drop empty columns of those names, keep (and rename) any that hold data */
+  const used=j=>MK_EX.some(([id])=>MK_SUBJ.some(x=>{const v=MK.ex[id].marks[x][j];return v!==''&&v!=null}))||['cgpa','credits'].some(k=>MK.prev[k][j]!=='');
+  const drop=[];MK.names.forEach((nm,j)=>{if(MK_OLD.includes(nm.trim())){if(used(j))MK.names[j]=j===0?'You':'Friend '+(j+1);else drop.push(j)}});
+  if(drop.length&&drop.length<MK.names.length)mkDrop(drop);else if(drop.length){MK.names[0]='You';mkDrop(drop.filter(j=>j>0))}}
+function mkDrop(js){const keep=j=>!js.includes(j);MK.names=MK.names.filter((_,j)=>keep(j));
+  MK_EX.forEach(([id])=>MK_SUBJ.forEach(x=>{MK.ex[id].marks[x]=MK.ex[id].marks[x].filter((_,j)=>keep(j))}));
+  ['cgpa','credits'].forEach(k=>{MK.prev[k]=MK.prev[k].filter((_,j)=>keep(j))});if(!MK.names.length)MK.names=['You'];mkNorm()}
 window.mkSubjSync=function(){let l=null;try{l=JSON.parse(localStorage.getItem('asgSubjects')||'null')}catch(e){}if(!Array.isArray(l))return;MKC=true;MK_SUBJ=l.filter(x=>!x.prac).map(x=>x.name);mkNorm();try{mkRender()}catch(e){}};
 mkNorm();
 try{const r=localStorage.getItem('asgMarks');if(r){MK=Object.assign(MK,JSON.parse(r));mkHad=true;mkNorm()}}catch(e){}
@@ -4109,25 +4120,29 @@ const mkE=()=>MK.ex[mkSel];
 function mkSave(){MK.ts=Date.now();try{localStorage.setItem('asgMarks',JSON.stringify(MK))}catch(e){}
   if(MKDB){clearTimeout(mkTimer);mkTimer=setTimeout(()=>{try{MKDB.set({json:JSON.stringify(MK),ts:MK.ts}).catch(()=>{})}catch(e){}},700)}}
 const mkNum=v=>{const n=parseFloat(v);return isFinite(n)?n:null};
-function mkStats(){const E=mkE();return[0,1,2,3].map(j=>{let t=0,m=0,c=0;MK_SUBJ.forEach(x=>{const v=mkNum(E.marks[x][j]);if(v!=null){t+=v;m+=E.max[x];c++}});return{t,m,c,p:m?t/m*100:null}})}
+function mkStats(){const E=mkE();return mkIdx().map(j=>{let t=0,m=0,c=0;MK_SUBJ.forEach(x=>{const v=mkNum(E.marks[x][j]);if(v!=null){t+=v;m+=E.max[x];c++}});return{t,m,c,p:m?t/m*100:null}})}
 function mkFoot(){const st=mkStats(),ps=st.map((x,j)=>({j,p:x.p})).filter(x=>x.p!=null).sort((a,b)=>b.p-a.p),rk={};
   ps.forEach((x,i)=>{rk[x.j]=i>0&&Math.abs(x.p-ps[i-1].p)<1e-9?rk[ps[i-1].j]:i+1});
   const best=ps.length>1?ps[0].p:null,f1=v=>(Math.round(v*100)/100).toString(),en=MK_EX.find(x=>x[0]===mkSel)[1];
   $('mkFoot').innerHTML='<tr><th class="mk-s">Total</th>'+st.map(x=>`<td class="${best!=null&&x.p===best?'top':''}">${x.c?f1(x.t)+'<small style="display:block;font-weight:400;color:var(--mu);font-size:11px">/'+f1(x.m)+'</small>':'–'}</td>`).join('')+'</tr>'+
     '<tr><th class="mk-s">%</th>'+st.map(x=>`<td class="${best!=null&&x.p===best?'top':''}">${x.p==null?'–':f1(x.p)+'%'}</td>`).join('')+'</tr>'+
     '<tr><th class="mk-s">Rank</th>'+st.map((x,j)=>`<td class="${rk[j]===1&&ps.length>1?'top':''}">${rk[j]?'#'+rk[j]:'–'}</td>`).join('')+'</tr>';
-  const lead=ps.length?ps.filter(x=>Math.abs(x.p-ps[0].p)<1e-9).map(x=>esc(MK.names[x.j]||MK_DEF[x.j])).join(' & '):'';
+  const lead=ps.length?ps.filter(x=>Math.abs(x.p-ps[0].p)<1e-9).map(x=>esc(MK.names[x.j])).join(' & '):'';
   $('mkTop').innerHTML=ps.length>1?`${en}: <b>${lead}</b> leads with ${f1(ps[0].p)}%`:(ps.length?'Add marks for the others to compare.':'Tap Edit and enter the '+en+' marks.')}
 function mkRender(){const t=$('mkTable');if(!t)return;const E=mkE();
   $('mkSeg').innerHTML=MK_EX.map(([id,nm])=>`<button class="${id===mkSel?'on':''}" onclick="mkPick('${id}')">${id==='as'&&window.innerWidth<370?'Assign.':nm}</button>`).join('');
   $('mkEditBtn').textContent=mkEdit?'Done':'Edit';$('mkEditBtn').className=mkEdit?'on':'';
   $('mkHint').textContent=mkEdit?'Type the marks. The small box under each subject is its maximum marks (40 for the insems, 100 for the end sem). Change it if a subject is different.':'Green box = highest marks in that subject. Totals and rank use only the subjects that have marks.';
-  let h='<thead><tr><th class="mk-s">Subject</th>'+[0,1,2,3].map(j=>mkEdit?`<th class="mk-n"><input value="${esc(MK.names[j])}" oninput="mkName(${j},this.value)" aria-label="Name ${j+1}"></th>`:`<th class="mk-n">${esc(MK.names[j])}</th>`).join('')+'</tr></thead><tbody>';
+  let h='<thead><tr><th class="mk-s">Subject</th>'+mkIdx().map(j=>mkEdit?`<th class="mk-n"><input value="${esc(MK.names[j])}" oninput="mkName(${j},this.value)" aria-label="Name ${j+1}">${MK.names.length>1?`<button class="mk-del" onclick="mkDel(${j})" aria-label="Remove ${esc(MK.names[j])}">✕</button>`:''}</th>`:`<th class="mk-n">${esc(MK.names[j])}</th>`).join('')+'</tr></thead><tbody>';
   MK_SUBJ.forEach(x=>{const vals=E.marks[x].map(mkNum),ent=vals.filter(v=>v!=null),hi=ent.length>1?Math.max(...ent):null,lo=ent.length>2?Math.min(...ent):null;
     h+=`<tr><td class="mk-s"><b>${x}</b>${mkEdit?`<input type="number" inputmode="decimal" step="any" value="${E.max[x]}" oninput="mkMax('${x}',this.value)" aria-label="${x} maximum marks">`:''}</td>`+
       vals.map((v,j)=>mkEdit?`<td><input type="number" inputmode="decimal" step="any" value="${E.marks[x][j]}" oninput="mkSet('${x}',${j},this.value)" aria-label="${x} ${esc(MK.names[j])}"></td>`:
         `<td class="${v==null?'none':(hi!=null&&v===hi?'best':(lo!=null&&v===lo&&lo!==hi?'low':''))}">${v==null?'–':(Math.round(v*100)/100)}</td>`).join('')+'</tr>'});
-  t.innerHTML=h+'</tbody><tfoot id="mkFoot"></tfoot>';mkFoot()}
+  t.innerHTML=h+'</tbody><tfoot id="mkFoot"></tfoot>';mkFoot();
+  let ab=$('mkAdd');if(!ab){ab=document.createElement('button');ab.id='mkAdd';ab.className='mk-add';ab.onclick=mkAddFriend;const w=t.parentNode;w.insertAdjacentElement('afterend',ab)}
+  ab.textContent='+ Add friend';ab.style.display=MK.names.length>=MK_MAX?'none':''}
+function mkAddFriend(){if(MK.names.length>=MK_MAX)return;let k=MK.names.length+1,nm='Friend '+k;while(MK.names.includes(nm))nm='Friend '+(++k);MK.names.push(nm);MK_EX.forEach(([id])=>MK_SUBJ.forEach(x=>MK.ex[id].marks[x].push('')));['cgpa','credits'].forEach(c=>MK.prev[c].push(''));mkEdit=true;mkSave();mkRender();try{sgRender()}catch(e){}}
+function mkDel(j){if(MK.names.length<2)return;const nm=MK.names[j];if(!confirm('Remove '+nm+' and their marks?'))return;mkDrop([j]);mkSave();mkRender();try{sgRender()}catch(e){}}
 function mkPick(id){mkSel=id;try{localStorage.setItem('asgMkSel',id)}catch(e){}mkRender()}
 function mkToggle(){mkEdit=!mkEdit;mkRender()}
 function mkName(j,v){MK.names[j]=v;mkSave();mkFoot()}
@@ -4147,7 +4162,7 @@ function sgGrade(x,j){const f=k=>{const v=mkNum(MK.ex[k].marks[x][j]);return v==
   const raw=Math.min(10,(a*20+(i1*40+i2*40)*0.375+es*50)/10),r=Math.round(raw),g=SG_GR.find(q=>r>=q[0]);
   return{raw,r,grade:g?g[1]:'F',gp:g?g[2]:0}}
 function sgCalc(){const f2=v=>v.toFixed(2);
-  const res=[0,1,2,3].map(j=>{let sum=0,cr=0;MK_SUBJ.forEach(x=>{const g=sgGrade(x,j),c=MK.credits[x];if(g&&c>0){sum+=c*g.gp;cr+=c}});return{sg:cr?sum/cr:null,cr}});
+  const res=mkIdx().map(j=>{let sum=0,cr=0;MK_SUBJ.forEach(x=>{const g=sgGrade(x,j),c=MK.credits[x];if(g&&c>0){sum+=c*g.gp;cr+=c}});return{sg:cr?sum/cr:null,cr}});
   const sgs=res.filter(r=>r.sg!=null),bestS=sgs.length>1?Math.max(...sgs.map(r=>r.sg)):null;
   $('sgOut').innerHTML='<tr><th class="mk-s">SGPA</th>'+res.map(r=>`<td class="${bestS!=null&&r.sg===bestS?'top':''}">${r.sg==null?'–':f2(r.sg)+'<small>'+r.cr+' cr</small>'}</td>`).join('')+'</tr>';
   const lead=sgs.length>1?sgs.filter(r=>r.sg===bestS).map(r=>esc(MK.names[res.indexOf(r)])).join(' & '):'';
@@ -4157,7 +4172,7 @@ function sgRender(){const t=$('sgTable');if(!t)return;
   $('sgHint').textContent=sgEdit?'Set the credits of each subject.':'Score = (Assignment/20 + (Insem 1 + Insem 2) x 0.375 + End Sem x 0.5) / 10, rounded to a whole number = grade point (O 10, A 9, B 8, C 7, D 6, E 5, F 0). SGPA = sum(credit x grade point) / sum(credits). A subject counts only when all 4 marks are filled.';
   let h='<thead><tr><th class="mk-s">Subject</th>'+MK.names.map(n=>`<th class="mk-n">${esc(n)}</th>`).join('')+'</tr></thead><tbody>';
   MK_SUBJ.forEach(x=>{h+=`<tr><td class="mk-s"><b>${x}</b>${sgEdit?`<input type="number" inputmode="decimal" step="any" value="${MK.credits[x]}" oninput="sgCred('${x}',this.value)" aria-label="${x} credits">`:`<small>${MK.credits[x]} cr</small>`}</td>`+
-    [0,1,2,3].map(j=>{const g=sgGrade(x,j);return g?`<td class="${g.gp>=9?'g-hi':(g.gp<=5?'g-lo':'')}"><b class="sgg">${g.grade}</b><small>${g.raw.toFixed(2)} → ${g.r}</small></td>`:'<td class="none">–</td>'}).join('')+'</tr>'});
+    mkIdx().map(j=>{const g=sgGrade(x,j);return g?`<td class="${g.gp>=9?'g-hi':(g.gp<=5?'g-lo':'')}"><b class="sgg">${g.grade}</b><small>${g.raw.toFixed(2)} → ${g.r}</small></td>`:'<td class="none">–</td>'}).join('')+'</tr>'});
   h+='</tbody>';
   t.innerHTML=h+'<tfoot id="sgOut"></tfoot>';sgCalc()}
 function sgToggle(){sgEdit=!sgEdit;sgRender()}
