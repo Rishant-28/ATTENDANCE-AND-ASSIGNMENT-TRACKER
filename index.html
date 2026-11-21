@@ -1368,8 +1368,10 @@ body.onb-custom #ttTools button[onclick^="loadPreset"]{display:none}
 #onb .ob-card.b1{z-index:2;transform:rotate(-6deg);opacity:1;transition:transform .38s,opacity .38s;pointer-events:none}
 #onb .ob-card.b2{z-index:1;transform:rotate(-12deg);opacity:1;transition:transform .38s,opacity .38s;pointer-events:none}
 #onb .ob-card.b1>*,#onb .ob-card.b2>*{visibility:hidden}
-#onb .ob-card.b1::before,#onb .ob-card.b2::before{content:'AAT\A♥';white-space:pre;position:absolute;left:12px;top:12px;font:800 16px/1.1 Georgia,serif;color:#e11d2e;text-align:center}
-#onb .ob-card.b2::before{content:'AAT\A♠';color:#111;left:18px}
+#onb .ob-card.b1::before,#onb .ob-card.b2::before{content:'ATTENDANCE';position:absolute;left:15px;top:18px;writing-mode:vertical-rl;text-orientation:upright;letter-spacing:3px;font:800 15px/1 Corbel,'Segoe UI',system-ui,sans-serif;color:var(--ac);white-space:nowrap}
+#onb .ob-card.b2::before{content:'ASSIGNMENT';color:var(--tx);left:26px;top:30px;opacity:.85}
+#onb .ob-card.b1{box-shadow:-10px 4px 20px rgba(0,0,0,.16),0 0 0 1px color-mix(in srgb,var(--ac) 25%,transparent),0 0 14px 2px color-mix(in srgb,var(--ac) 45%,transparent),0 0 38px 6px color-mix(in srgb,var(--ac) 22%,transparent)}
+#onb .ob-card.cur{box-shadow:-14px 6px 26px rgba(0,0,0,.22),0 0 0 1px color-mix(in srgb,var(--ac) 25%,transparent),0 0 14px 2px color-mix(in srgb,var(--ac) 45%,transparent),0 0 38px 6px color-mix(in srgb,var(--ac) 22%,transparent)}
 #onb .ob-busy{flex:1;font-size:13px;color:var(--mu);padding:10px 12px;border:1px dashed var(--pbd);border-radius:12px}
 #onb .ob-sats{display:flex;gap:8px}
 #onb .ob-sats button{flex:1;padding:12px 0;font-weight:700}
