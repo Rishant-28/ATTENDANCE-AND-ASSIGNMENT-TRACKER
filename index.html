@@ -1357,16 +1357,21 @@ html[data-theme="dark"] .scan-card{background:#161c1d}html[data-theme="light"] .
 body.onb-custom #onbCard{display:block}
 body.onb-custom #ttTools button[onclick^="loadPreset"]{display:none}
 
-#onb .ob-stage{position:relative;width:100%;max-width:460px;height:min(760px,100%)}
-#onb .ob-card{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--pcard,#fff);border:1px solid color-mix(in srgb,var(--ac) 45%,var(--pbd,#e3e6ef));border-radius:26px;overflow:hidden;transform-origin:50% 100%;
+#onb .ob-stage{position:relative;width:100%;max-width:316px;height:min(590px,92%);margin-left:44px}
+#onb .ob-card{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--pcard,#fff);border:1px solid color-mix(in srgb,var(--ac) 45%,var(--pbd,#e3e6ef));border-radius:22px;overflow:hidden;transform-origin:90% 100%;
   box-shadow:0 0 0 1px color-mix(in srgb,var(--ac) 25%,transparent),0 0 14px 2px color-mix(in srgb,var(--ac) 45%,transparent),0 0 38px 6px color-mix(in srgb,var(--ac) 22%,transparent)}
 #onb .ob-card.cur{z-index:3;transition:transform .38s cubic-bezier(.4,.1,.2,1),opacity .38s}
 #onb .ob-card.cur.in{animation:obIn .42s cubic-bezier(.2,.9,.3,1.1)}
-#onb .ob-card.b1{z-index:2;transform:translateY(12px) scale(.955);opacity:.85;transition:transform .38s,opacity .38s;pointer-events:none}
-#onb .ob-card.b2{z-index:1;transform:translateY(24px) scale(.91);opacity:.6;transition:transform .38s,opacity .38s;pointer-events:none}
+#onb .ob-card.b1{z-index:2;transform:rotate(-6deg);opacity:1;transition:transform .38s,opacity .38s;pointer-events:none}
+#onb .ob-card.b2{z-index:1;transform:rotate(-12deg);opacity:1;transition:transform .38s,opacity .38s;pointer-events:none}
 #onb .ob-card.b1>*,#onb .ob-card.b2>*{visibility:hidden}
-#onb .ob-card.b1.up1{transform:none;opacity:1}
-#onb .ob-card.b2.up2{transform:translateY(12px) scale(.955);opacity:.85}
+#onb .ob-card.b1::before,#onb .ob-card.b2::before{content:'A\A♥';white-space:pre;position:absolute;left:14px;top:12px;font:800 20px/1.1 Georgia,serif;color:#e11d2e;text-align:center}
+#onb .ob-card.b2::before{content:'A\A♠';color:#111}
+#onb .ob-sats{display:flex;gap:8px}
+#onb .ob-sats button{flex:1;padding:12px 0;font-weight:700}
+#onb .ob-sats button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+#onb .ob-card.b1.up1{transform:none}
+#onb .ob-card.b2.up2{transform:rotate(-6deg)}
 #onb .ob-card.cur.outL{transform:translateX(-125%) rotate(-14deg);opacity:0}
 #onb .ob-card.cur.outR{transform:translateX(125%) rotate(14deg);opacity:0}
 @keyframes obIn{from{transform:translateY(30px) scale(.94);opacity:0}to{transform:none;opacity:1}}
@@ -2681,9 +2686,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 <script>
 const DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],ORD=[1,2,3,4,5,6];
 const td0=new Date().getDay();
-let S={target:75,subs:[],slots:[],grid:{},rooms:null,pin:'',holidays:[],lastSave:'',thirdSat:false,workSat:[],holPre:0,log:{},marks:{},autoNext:'',tab:0,pal:'',sty:'',pat:'',fx:'',pint:2,spl:'',splf:1,cnx:0,favs:[],hue:null,leaves:[],fcEnd:'',fixTue:0,ts:0,portal:'',pre:{},custom:0,asgAuto:0,asgOff:[],xc:{},day:ORD.includes(td0)?td0:1,skip:{}};
+let S={target:75,subs:[],slots:[],grid:{},rooms:null,pin:'',holidays:[],lastSave:'',thirdSat:false,workSat:[],holPre:0,log:{},marks:{},autoNext:'',tab:0,pal:'',sty:'',pat:'',fx:'',pint:2,spl:'',splf:1,cnx:0,favs:[],hue:null,leaves:[],fcEnd:'',fixTue:0,ts:0,portal:'',pre:{},custom:0,asgAuto:0,asgOff:[],xc:{},satOff:[],day:ORD.includes(td0)?td0:1,skip:{}};
 const DBP={ref:null,ready:false,t:null};let hadLocal=false;
-function applyState(o){S=Object.assign(S,{target:o.target||75,subs:o.subs||[],slots:o.slots||[],grid:o.grid||{},pv:o.pv,rooms:o.rooms||null,pin:o.pin||'',holidays:o.holidays||[],lastSave:o.lastSave||'',thirdSat:!!o.thirdSat,workSat:o.workSat||[],holPre:o.holPre||0,log:o.log||{},marks:o.marks||{},autoNext:o.autoNext||'',tab:o.tab||0,leaves:o.leaves||[],fcEnd:o.fcEnd||'',fixTue:o.fixTue||0,ts:o.ts||0,portal:o.portal||'',pre:o.pre||{},pal:o.pal||'',sty:o.sty||'',pat:o.pat||'',fx:o.fx||'',pint:o.pint||2,spl:o.spl||'',splf:o.splf===0?0:1,cnx:o.cnx||0,favs:Array.isArray(o.favs)?o.favs:[],hue:(typeof o.hue==='number')?o.hue:null,custom:o.custom||0,asgAuto:o.asgAuto?1:0,asgOff:Array.isArray(o.asgOff)?o.asgOff:[],xc:o.xc||{}});S.subs.forEach(x=>{if(x.name==='COA')x.name='COD'});cnExtraFix(true)}
+function applyState(o){S=Object.assign(S,{target:o.target||75,subs:o.subs||[],slots:o.slots||[],grid:o.grid||{},pv:o.pv,rooms:o.rooms||null,pin:o.pin||'',holidays:o.holidays||[],lastSave:o.lastSave||'',thirdSat:!!o.thirdSat,workSat:o.workSat||[],holPre:o.holPre||0,log:o.log||{},marks:o.marks||{},autoNext:o.autoNext||'',tab:o.tab||0,leaves:o.leaves||[],fcEnd:o.fcEnd||'',fixTue:o.fixTue||0,ts:o.ts||0,portal:o.portal||'',pre:o.pre||{},pal:o.pal||'',sty:o.sty||'',pat:o.pat||'',fx:o.fx||'',pint:o.pint||2,spl:o.spl||'',splf:o.splf===0?0:1,cnx:o.cnx||0,favs:Array.isArray(o.favs)?o.favs:[],hue:(typeof o.hue==='number')?o.hue:null,custom:o.custom||0,asgAuto:o.asgAuto?1:0,asgOff:Array.isArray(o.asgOff)?o.asgOff:[],xc:o.xc||{},satOff:Array.isArray(o.satOff)?o.satOff:[]});S.subs.forEach(x=>{if(x.name==='COA')x.name='COD'});cnExtraFix(true)}
 try{let r=localStorage.getItem('attPlanner3'),o=r?JSON.parse(r):null;if(o)hadLocal=true;
   if(!o){r=localStorage.getItem('attPlanner');if(r){const q=JSON.parse(r);o={target:q.target,subs:q.subs}}}
   if(o)applyState(o)}catch(e){}
@@ -2694,7 +2699,7 @@ const pc=(a,t)=>t>0?a/t*100:0;
 const f2=x=>{const t=(Math.round(x*100)/100).toFixed(2);return t.endsWith('0')?t.slice(0,-1):t};
 const fmt=(a,t)=>t>0?f2(pc(a,t))+'%':'—';
 const t12=t=>{if(!t)return'';const[h,m]=t.split(':').map(Number);return((h%12)||12)+':'+pad(m)+(h<12?' AM':' PM')};
-function snapState(){return{target:S.target,subs:S.subs,slots:S.slots,grid:S.grid,pv:S.pv,rooms:S.rooms,pin:S.pin,holidays:S.holidays,lastSave:S.lastSave,thirdSat:S.thirdSat,workSat:S.workSat,holPre:S.holPre,log:S.log,marks:S.marks,autoNext:S.autoNext,tab:S.tab,leaves:S.leaves,fcEnd:S.fcEnd,fixTue:S.fixTue,ts:S.ts,portal:S.portal,pre:S.pre,pal:S.pal,sty:S.sty,pat:S.pat,fx:S.fx,pint:S.pint,spl:S.spl,splf:S.splf,cnx:S.cnx,favs:S.favs,hue:S.hue,custom:S.custom,asgAuto:S.asgAuto,asgOff:S.asgOff,xc:S.xc}}
+function snapState(){return{target:S.target,subs:S.subs,slots:S.slots,grid:S.grid,pv:S.pv,rooms:S.rooms,pin:S.pin,holidays:S.holidays,lastSave:S.lastSave,thirdSat:S.thirdSat,workSat:S.workSat,holPre:S.holPre,log:S.log,marks:S.marks,autoNext:S.autoNext,tab:S.tab,leaves:S.leaves,fcEnd:S.fcEnd,fixTue:S.fixTue,ts:S.ts,portal:S.portal,pre:S.pre,pal:S.pal,sty:S.sty,pat:S.pat,fx:S.fx,pint:S.pint,spl:S.spl,splf:S.splf,cnx:S.cnx,favs:S.favs,hue:S.hue,custom:S.custom,asgAuto:S.asgAuto,asgOff:S.asgOff,xc:S.xc,satOff:S.satOff}}
 function save(){S.ts=Date.now();try{localStorage.setItem('attPlanner3',JSON.stringify(snapState()))}catch(e){}dbQueue();if(S.custom&&S.asgAuto&&window.asgSyncFromTT)window.asgSyncFromTT()}
 function dbQueue(){if(!DBP.ready)return;clearTimeout(DBP.t);DBP.t=setTimeout(dbWrite,700)}
 function dbWrite(){if(!DBP.ready)return;try{DBP.ref.set({json:JSON.stringify(snapState()),ts:S.ts}).catch(()=>{})}catch(e){}}
@@ -2711,11 +2716,11 @@ function setCell(id,d,v){(S.grid[id]=S.grid[id]||{})[d]=v;if(!v)delete S.grid[id
 const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const pd=x=>{const[y,m,d]=x.split('-').map(Number);return new Date(y,m-1,d)};
 const isThirdSat=i=>{const d=pd(i);return d.getDay()===6&&d.getDate()>=15&&d.getDate()<=21};
-const isHol=i=>S.holidays.some(h=>h.from<=i&&i<=h.to)||(S.thirdSat&&isThirdSat(i)&&!S.workSat.includes(i));
+const isHol=i=>S.holidays.some(h=>h.from<=i&&i<=h.to)||((S.custom?(pd(i).getDay()===6&&(S.satOff||[]).includes(Math.ceil(pd(i).getDate()/7))):(S.thirdSat&&isThirdSat(i)))&&!S.workSat.includes(i));
 const PRE_HOL=[['2026-01-14','Makar Sankranti'],['2026-01-26','Republic Day'],['2026-02-15','Maha Shivratri'],['2026-03-02','Holi Break'],['2026-03-03','Holika Dahan'],['2026-03-04','Dhulandi'],['2026-03-21','Eid-Ul-Fitr*'],['2026-03-26','Ram Navami'],['2026-03-31','Mahavir Jayanti'],['2026-04-14','Dr. Ambedkar Jayanti'],['2026-05-28','Bakr Id/Eid-Ul-Zuha*'],['2026-08-15','Independence Day'],['2026-08-28','Raksha Bandhan'],['2026-09-04','Janmashtami'],['2026-10-02','Mahatma Gandhi Jayanti'],['2026-10-20','Dussehra'],['2026-10-29','Karwa Chauth'],['2026-11-06','Dhanteras'],['2026-11-07','Chhoti Deepawali'],['2026-11-08','Deepawali'],['2026-11-09','Vishwakarma Day/Goverdhan Pooja'],['2026-11-10','Deepawali Break'],['2026-11-11','Bhai Dhooj'],['2026-11-24','Guru Nanak Jayanti'],['2026-12-25','Christmas Day']];
 const WORK_SAT=['2026-05-16','2026-06-20','2026-07-18','2026-09-19'];
 function toggleHolEdit(){S.editHol=!S.editHol;render()}
-function setThird(v){S.thirdSat=v;save();render()}
+function setThird(v){if(S.custom){S.satOff=v?[3]:[]}S.thirdSat=v;save();render()}
 function addWs(){const v=$('wsDate').value;if(!v)return;if(!S.workSat.includes(v))S.workSat.push(v);S.workSat.sort();$('wsDate').value='';save();render()}
 function delWs(v){S.workSat=S.workSat.filter(x=>x!==v);save();render()}
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -4365,9 +4370,9 @@ const root=()=>document.getElementById('onb');
 const E=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const rid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 const norm=s=>String(s).trim().toLowerCase();
-function blankD(){const t=Date.now().toString(36);return{subs:[],slots:[0,1,2,3,4,5].map(i=>({id:'n'+i+t,s:pad(9+i)+':00',e:pad(10+i)+':00'})),grid:{},hols:[],third:false,asg:true,off:[],xtra:[],xyes:false}}
+function blankD(){const t=Date.now().toString(36);return{subs:[],slots:[0,1,2,3,4,5].map(i=>({id:'n'+i+t,s:pad(9+i)+':00',e:pad(10+i)+':00'})),grid:{},hols:[],third:false,sat:[],asg:true,off:[],xtra:[],xyes:false}}
 function fromS(){return{subs:S.subs.map(x=>({id:x.id,name:x.name,att:x.att||0,tot:x.tot||0})),slots:S.slots.map(x=>({id:x.id,s:x.s,e:x.e})),grid:JSON.parse(JSON.stringify(S.grid||{})),
-  hols:(S.holidays||[]).filter(h=>!String(h.id).startsWith('off-')).map(h=>({from:h.from,to:h.to,name:h.name||''})),third:!!S.thirdSat,asg:S.custom?!!S.asgAuto:true,off:(S.asgOff||[]).slice(),xtra:Object.keys(S.xc||{}).map(k=>{const p=k.split('|');return{sub:(S.grid[p[0]]||{})[p[1]]||'',dow:+p[1],slot:p[0],s:'',e:''}}).filter(x=>x.sub),xyes:Object.keys(S.xc||{}).length>0}}
+  hols:(S.holidays||[]).filter(h=>!String(h.id).startsWith('off-')).map(h=>({from:h.from,to:h.to,name:h.name||''})),third:!!S.thirdSat,sat:S.custom?(S.satOff||[]).slice():(S.thirdSat?[3]:[]),asg:S.custom?!!S.asgAuto:true,off:(S.asgOff||[]).slice(),xtra:Object.keys(S.xc||{}).map(k=>{const p=k.split('|');return{sub:(S.grid[p[0]]||{})[p[1]]||'',dow:+p[1],slot:p[0],s:'',e:''}}).filter(x=>x.sub),xyes:Object.keys(S.xc||{}).length>0}}
 function ensureCustom(){if(S.custom)return;S.custom=1;S.pv=5;S.holPre=1;S.cnx=1;S.fixTue=1;S.portal=(typeof PORTAL!=='undefined'?PORTAL.id:'9999');if(!S.rooms)S.rooms={};if(!S.autoNext||S.autoNext==='2026-09-29')S.autoNext=iso(new Date())}
 function cardSync(){document.body.classList.toggle('onb-custom',!!S.custom)}
 window.onbCardSync=cardSync;
@@ -4384,7 +4389,7 @@ function commitTT(){const d=O.d;ensureCustom();
 function commitHol(){const d=O.d;ensureCustom();
   const offs=(S.holidays||[]).filter(h=>String(h.id).startsWith('off-'));
   const hs=d.hols.filter(h=>h.from).map((h,i)=>({id:'h'+i+'-'+h.from,from:h.from,to:(h.to&&h.to>=h.from)?h.to:h.from,name:(h.name||'').trim()}));
-  S.holidays=hs.concat(offs).sort((a,b)=>a.from.localeCompare(b.from));S.thirdSat=!!d.third;S.workSat=S.workSat||[];save();render()}
+  S.holidays=hs.concat(offs).sort((a,b)=>a.from.localeCompare(b.from));S.satOff=(d.sat||[]).slice();S.thirdSat=S.satOff.includes(3);S.workSat=S.workSat||[];save();render()}
 function commitExtra(){const d=O.d;ensureCustom();
   Object.keys(S.xc||{}).forEach(k=>{const p=k.split('|');if(S.grid[p[0]]&&S.grid[p[0]][p[1]])delete S.grid[p[0]][p[1]]});S.xc={};
   (d.xyes?d.xtra:[]).forEach(x=>{if(!x.sub||!S.subs.some(s=>s.id===x.sub))return;let sid=x.slot;
@@ -4405,7 +4410,7 @@ function stepTT(){const d=O.d,sl=d.slots.slice().sort((a,b)=>(a.s||'').localeCom
   h+=`<div class="ob-sec"><h3>3. Weekly grid</h3><div class="ob-days">${ORD.map(dw=>`<button class="${O.day===dw?'on':''}" onclick="ONBX.setDay(${dw})">${DN[dw]}</button>`).join('')}</div>`;
   h+=sl.length&&d.subs.length?sl.map((x,i)=>`<div class="ob-cell"><span>${t12(x.s)} – ${t12(x.e)}</span><select onchange="ONBX.setCell('${x.id}',${O.day},this.value)">${opts((d.grid[x.id]||{})[O.day]||'',i)}</select></div>`).join('')+`<button onclick="ONBX.copyDay()" style="margin-top:4px">Copy ${DN[O.day]} to all days</button><div class="ob-note">Leave a period on "free" if there is no class. For a 2-slot lab pick the subject in the first slot and "continues" in the next.</div>`:`<div class="ob-note">Add at least one subject and one time slot to fill the grid.</div>`;
   return h+'</div>'}
-function stepHol(){const d=O.d;let h=`<h2>Holidays</h2><p class="mu">Days with no classes are not counted. Sundays are off automatically.</p><div class="ob-sec"><label class="ob-chk"><input type="checkbox" ${d.third?'checked':''} onchange="ONBX.setThird(this.checked)"> Every 3rd Saturday is a holiday</label></div><div class="ob-sec"><h3>Holiday dates</h3>`;
+function stepHol(){const d=O.d;let h=`<h2>Holidays</h2><p class="mu">Days with no classes are not counted. Sundays are off automatically.</p><div class="ob-sec"><h3>Saturdays off</h3><div class="ob-sats">${[1,2,3,4].map(n=>`<button class="${d.sat.includes(n)?'on':''}" onclick="ONBX.toggleSat(${n})">${n}${['','st','nd','rd','th'][n]}</button>`).join('')}</div><div class="ob-note">Tap the Saturdays that are holidays, e.g. 2nd and 4th.</div></div><div class="ob-sec"><h3>Holiday dates</h3>`;
   h+=d.hols.map((x,i)=>`<div class="ob-row"><input class="nm" placeholder="Name (optional)" value="${E(x.name)}" onchange="ONBX.setHol(${i},'name',this.value)"><button class="ob-rm" onclick="ONBX.delHol(${i})" aria-label="Remove">✕</button></div><div class="ob-row" style="margin-top:-2px"><input type="date" value="${x.from||''}" onchange="ONBX.setHol(${i},'from',this.value)"><span class="dash">to</span><input type="date" value="${x.to||''}" onchange="ONBX.setHol(${i},'to',this.value)"></div>`).join('')||'<div class="ob-note" style="margin-bottom:8px">No holidays added yet.</div>';
   return h+`<button onclick="ONBX.addHol()">+ Add holiday</button><div class="ob-note">For a one-day holiday fill only the first date.</div></div>`}
 function stepAsg(){const d=O.d,names=S.subs.map(x=>x.name);let h=`<h2>Assignments</h2><p class="mu">The subjects in your timetable can be added to the Assignments section automatically (5 assignments each; labs become practicals).</p>`;
@@ -4455,7 +4460,7 @@ const X=window.ONBX={
   setDay(d){O.day=d;draw()},
   setCell(sid,dw,v){O.d.grid[sid]=O.d.grid[sid]||{};if(v)O.d.grid[sid][dw]=v;else delete O.d.grid[sid][dw]},
   copyDay(){O.d.slots.forEach(x=>{const v=(O.d.grid[x.id]||{})[O.day];ORD.forEach(dw=>{if(dw===O.day)return;O.d.grid[x.id]=O.d.grid[x.id]||{};if(v)O.d.grid[x.id][dw]=v;else delete O.d.grid[x.id][dw]})});toast2('Copied to all days')},
-  setThird(b){O.d.third=!!b},
+  toggleSat(n){const a=O.d.sat,i=a.indexOf(n);if(i>=0)a.splice(i,1);else a.push(n);draw()},
   addHol(){O.d.hols.push({from:'',to:'',name:''});draw()},
   delHol(i){O.d.hols.splice(i,1);draw()},
   setHol(i,k,v){O.d.hols[i][k]=v},
