@@ -1367,8 +1367,11 @@ body.onb-custom #ttTools button[onclick^="loadPreset"]{display:none}
 #onb .ob-card.b1>*,#onb .ob-card.b2>*{visibility:hidden}
 #onb .ob-card.b1::before,#onb .ob-card.b2::before{content:'A\A♥';white-space:pre;position:absolute;left:14px;top:12px;font:800 20px/1.1 Georgia,serif;color:#e11d2e;text-align:center}
 #onb .ob-card.b2::before{content:'A\A♠';color:#111}
+#onb .ob-busy{flex:1;font-size:13px;color:var(--mu);padding:10px 12px;border:1px dashed var(--pbd);border-radius:12px}
 #onb .ob-sats{display:flex;gap:8px}
 #onb .ob-sats button{flex:1;padding:12px 0;font-weight:700}
+#onb .ob-tg{flex-wrap:wrap}
+#onb .ob-tg button{flex:1 0 28%}
 #onb .ob-sats button.on{background:var(--ac);border-color:var(--ac);color:#fff}
 #onb .ob-card.b1.up1{transform:none}
 #onb .ob-card.b2.up2{transform:rotate(-6deg)}
@@ -4370,9 +4373,9 @@ const root=()=>document.getElementById('onb');
 const E=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const rid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 const norm=s=>String(s).trim().toLowerCase();
-function blankD(){const t=Date.now().toString(36);return{subs:[],slots:[0,1,2,3,4,5].map(i=>({id:'n'+i+t,s:pad(9+i)+':00',e:pad(10+i)+':00'})),grid:{},hols:[],third:false,sat:[],asg:true,off:[],xtra:[],xyes:false}}
+function blankD(){const t=Date.now().toString(36);return{subs:[],slots:[0,1,2,3,4,5].map(i=>({id:'n'+i+t,s:pad(9+i)+':00',e:pad(10+i)+':00'})),grid:{},target:75,hols:[],third:false,sat:[],asg:true,off:[],xtra:[],xyes:false}}
 function fromS(){return{subs:S.subs.map(x=>({id:x.id,name:x.name,att:x.att||0,tot:x.tot||0})),slots:S.slots.map(x=>({id:x.id,s:x.s,e:x.e})),grid:JSON.parse(JSON.stringify(S.grid||{})),
-  hols:(S.holidays||[]).filter(h=>!String(h.id).startsWith('off-')).map(h=>({from:h.from,to:h.to,name:h.name||''})),third:!!S.thirdSat,sat:S.custom?(S.satOff||[]).slice():(S.thirdSat?[3]:[]),asg:S.custom?!!S.asgAuto:true,off:(S.asgOff||[]).slice(),xtra:Object.keys(S.xc||{}).map(k=>{const p=k.split('|');return{sub:(S.grid[p[0]]||{})[p[1]]||'',dow:+p[1],slot:p[0],s:'',e:''}}).filter(x=>x.sub),xyes:Object.keys(S.xc||{}).length>0}}
+  hols:(S.holidays||[]).filter(h=>!String(h.id).startsWith('off-')).map(h=>({from:h.from,to:h.to,name:h.name||''})),target:S.target||75,third:!!S.thirdSat,sat:S.custom?(S.satOff||[]).slice():(S.thirdSat?[3]:[]),asg:S.custom?!!S.asgAuto:true,off:(S.asgOff||[]).slice(),xtra:Object.keys(S.xc||{}).map(k=>{const p=k.split('|');return{sub:(S.grid[p[0]]||{})[p[1]]||'',dow:+p[1],slot:p[0],s:'',e:''}}).filter(x=>x.sub),xyes:Object.keys(S.xc||{}).length>0}}
 function ensureCustom(){if(S.custom)return;S.custom=1;S.pv=5;S.holPre=1;S.cnx=1;S.fixTue=1;S.portal=(typeof PORTAL!=='undefined'?PORTAL.id:'9999');if(!S.rooms)S.rooms={};if(!S.autoNext||S.autoNext==='2026-09-29')S.autoNext=iso(new Date())}
 function cardSync(){document.body.classList.toggle('onb-custom',!!S.custom)}
 window.onbCardSync=cardSync;
@@ -4396,6 +4399,7 @@ function commitExtra(){const d=O.d;ensureCustom();
     if(sid==='new'||!S.slots.some(s=>s.id===sid)){if(!x.s||!x.e)return;let f=S.slots.find(s=>s.s===x.s&&s.e===x.e);if(!f){f={id:rid('n'),s:x.s,e:x.e};S.slots.push(f);S.slots.sort((a,b)=>a.s.localeCompare(b.s));S.grid[f.id]={}}sid=f.id}
     S.grid[sid]=S.grid[sid]||{};if(S.grid[sid][x.dow])return;S.grid[sid][x.dow]=x.sub;S.xc[sid+'|'+x.dow]=1});
   save();render()}
+function commitTarget(){ensureCustom();S.target=Math.min(100,Math.max(1,parseInt(O.d.target)||75));save();render()}
 function commitAsg(){const d=O.d;ensureCustom();
   S.asgAuto=d.asg?1:0;S.asgOff=d.off.slice();save();
   if(window.asgSyncFromTT)window.asgSyncFromTT(true)}
@@ -4417,21 +4421,28 @@ function stepAsg(){const d=O.d,names=S.subs.map(x=>x.name);let h=`<h2>Assignment
   if(!names.length)return h+`<div class="ob-sec"><div class="ob-note">There are no subjects yet, so nothing to add. You can add them from the timetable later.</div></div>`;
   h+=`<div class="ob-sec"><h3>Add these subjects</h3>${names.map(n=>`<label class="ob-chk"><input type="checkbox" ${d.off.includes(n)?'':'checked'} onchange="ONBX.setOff('${E(n).replace(/'/g,"&#39;")}',!this.checked)"> ${E(n)}</label>`).join('')}</div>`;
   return h+`<div class="ob-sec"><label class="ob-chk"><input type="checkbox" ${d.asg?'checked':''} onchange="ONBX.setAsg(this.checked)"> Keep Assignments in sync when I edit the timetable</label></div>`}
-function stepWelcome(){return`<div class="ob-hero"><div class="em">📅</div><h1>Welcome!</h1><p class="mu">Let's set up your planner. Tap the card to begin. Every card can be skipped.</p></div><ul class="ob-list"><li><i>1</i><span><b>Timetable</b></span></li><li><i>2</i><span><b>Any extra class?</b></span></li><li><i>3</i><span><b>Holidays</b></span></li><li><i>4</i><span><b>Assignments</b></span></li><li><i>5</i><span><b>Theme</b></span></li></ul><div class="ob-tap">Tap anywhere on this card ›</div>`}
+function stepWelcome(){return`<div class="ob-hero"><div class="em">📅</div><h1>Welcome!</h1><p class="mu">Let's set up your planner. Tap the card to begin. Every card can be skipped.</p></div><ul class="ob-list"><li><i>1</i><span><b>Timetable</b></span></li><li><i>2</i><span><b>Any extra class?</b></span></li><li><i>3</i><span><b>Holidays</b></span></li><li><i>4</i><span><b>Attendance target</b></span></li><li><i>5</i><span><b>Assignments</b></span></li><li><i>6</i><span><b>Theme</b></span></li></ul><div class="ob-tap">Tap anywhere on this card ›</div>`}
 const DOWS=()=>ORD.map(dw=>`<option value="${dw}">${DN[dw]}</option>`).join('');
-function stepExtra(){const d=O.d;let h=`<h2>Any extra class?</h2><p class="mu">An extra class, remedial class or one-off period outside your normal grid. It is added to your weekly timetable.</p><div class="ob-yn"><button class="${d.xyes?'':'on'}" onclick="ONBX.setXyes(false)">No</button><button class="${d.xyes?'on':''}" onclick="ONBX.setXyes(true)">Yes</button></div>`;
+function stepExtra(){const d=O.d;let h=`<h2>Any extra class?</h2><p class="mu">An extra or remedial class outside your normal timetable. Pick the day, then choose the subject in the period it happens.</p><div class="ob-yn"><button class="${d.xyes?'':'on'}" onclick="ONBX.setXyes(false)">No</button><button class="${d.xyes?'on':''}" onclick="ONBX.setXyes(true)">Yes</button></div>`;
   if(!d.xyes)return h+`<div class="ob-note">Nothing extra. You can add one later by editing the timetable.</div>`;
   if(!d.subs.length)return h+`<div class="ob-sec"><div class="ob-note">Add subjects in the timetable card first.</div></div>`;
-  const sl=d.slots.slice().sort((a,b)=>(a.s||'').localeCompare(b.s||''));
-  h+=d.xtra.map((x,i)=>`<div class="ob-sec"><div class="ob-row"><select class="nm" onchange="ONBX.setX(${i},'sub',this.value)"><option value="">Subject…</option>${d.subs.filter(s=>s.name.trim()).map(s=>`<option value="${s.id}"${x.sub===s.id?' selected':''}>${E(s.name)}</option>`).join('')}</select><button class="ob-rm" onclick="ONBX.delX(${i})" aria-label="Remove">✕</button></div><div class="ob-row"><select onchange="ONBX.setX(${i},'dow',this.value)">${ORD.map(dw=>`<option value="${dw}"${+x.dow===dw?' selected':''}>${DN[dw]}</option>`).join('')}</select><select onchange="ONBX.setX(${i},'slot',this.value)">${sl.map(s=>`<option value="${s.id}"${x.slot===s.id?' selected':''}>${t12(s.s)} – ${t12(s.e)}</option>`).join('')}<option value="new"${x.slot==='new'?' selected':''}>Other time…</option></select></div>${x.slot==='new'?`<div class="ob-row"><input type="time" value="${x.s||''}" onchange="ONBX.setX(${i},'s',this.value)"><span class="dash">to</span><input type="time" value="${x.e||''}" onchange="ONBX.setX(${i},'e',this.value)"></div>`:''}</div>`).join('');
-  return h+`<button onclick="ONBX.addX()">+ Add extra class</button>`}
+  const sl=d.slots.slice().sort((a,b)=>(a.s||'').localeCompare(b.s||'')),dw=O.xday||1,nm=id=>{const s=d.subs.find(x=>x.id===id);return s?E(s.name):''};
+  const xAt=(sid)=>d.xtra.findIndex(x=>x.slot===sid&&+x.dow===dw);
+  h+=`<div class="ob-days">${ORD.map(k=>`<button class="${dw===k?'on':''}" onclick="ONBX.setXday(${k})">${DN[k]}${d.xtra.some(x=>+x.dow===k)?' •':''}</button>`).join('')}</div>`;
+  h+=sl.map(x=>{const i=xAt(x.id),reg=(d.grid[x.id]||{})[dw];
+    if(i<0&&reg&&reg!=='cont'||i<0&&reg==='cont')return`<div class="ob-cell"><span>${t12(x.s)} – ${t12(x.e)}</span><div class="ob-busy">${reg==='cont'?'Lab continues':'Class: '+nm(reg)}</div></div>`;
+    return`<div class="ob-cell"><span>${t12(x.s)} – ${t12(x.e)}</span><select onchange="ONBX.setXcell('${x.id}',this.value)"><option value="">— no extra class —</option>${d.subs.filter(s=>s.name.trim()).map(s=>`<option value="${s.id}"${i>=0&&d.xtra[i].sub===s.id?' selected':''}>${E(s.name)}</option>`).join('')}</select></div>`}).join('');
+  const oth=d.xtra.map((x,i)=>({x,i})).filter(o=>o.x.slot==='new'&&+o.x.dow===dw);
+  h+=oth.map(({x,i})=>`<div class="ob-sec" style="margin-top:8px"><div class="ob-row"><input type="time" value="${x.s||''}" onchange="ONBX.setX(${i},'s',this.value)"><span class="dash">to</span><input type="time" value="${x.e||''}" onchange="ONBX.setX(${i},'e',this.value)"><button class="ob-rm" onclick="ONBX.delX(${i})" aria-label="Remove">✕</button></div><select style="width:100%" onchange="ONBX.setX(${i},'sub',this.value)"><option value="">Subject…</option>${d.subs.filter(s=>s.name.trim()).map(s=>`<option value="${s.id}"${x.sub===s.id?' selected':''}>${E(s.name)}</option>`).join('')}</select></div>`).join('');
+  return h+`<button onclick="ONBX.addX()" style="margin-top:6px">+ Extra class at a different time (${DN[dw]})</button><div class="ob-note">Days marked • have an extra class. Periods that already have a class are locked.</div>`}
+function stepTarget(){const t=+O.d.target||75;return`<h2>Attendance target</h2><p class="mu">What percentage do you need? All bunk and attend calculations will follow this.</p><div class="ob-sats ob-tg">${[65,70,75,80,85,90].map(n=>`<button class="${t===n?'on':''}" onclick="ONBX.setTarget(${n})">${n}%</button>`).join('')}</div><div class="ob-sec" style="margin-top:12px"><h3>Other value</h3><div class="ob-row"><input type="number" inputmode="numeric" min="1" max="100" value="${t}" onchange="ONBX.setTarget(this.value,1)" style="flex:1"><span class="dash">%</span></div></div>`}
 function stepTheme(){const seen={},L=PALS.filter(p=>seen[p[0]]?0:(seen[p[0]]=1));const cur=S.pal||'teal';
   return`<h2>Pick a theme</h2><p class="mu">Tap a colour set. You can change it any time from the palette button.</p><div class="ob-pals">${L.map(([k,n,g])=>`<button class="${cur===k?'on':''}" onclick="ONBX.setPalX('${k}')"><i style="background:${g}"></i>${n}</button>`).join('')}</div>`}
-const LAST=()=>5;
-const STEPS=[stepWelcome,stepTT,stepExtra,stepHol,stepAsg,stepTheme];
+const LAST=()=>6;
+const STEPS=[stepWelcome,stepTT,stepExtra,stepHol,stepTarget,stepAsg,stepTheme];
 let busy=false;
 function cardHTML(st){const first=st===0,last=st===LAST();
-  const dots=[1,2,3,4,5].map(i=>`<i class="${st>=i?'on':''}"></i>`).join('');
+  const dots=[1,2,3,4,5,6].map(i=>`<i class="${st>=i?'on':''}"></i>`).join('');
   let foot;
   if(first)foot=`<button class="ob-skip" onclick="event.stopPropagation();ONBX.skipAll()">Skip setup</button><button class="p" onclick="event.stopPropagation();ONBX.next()">Start</button>`;
   else foot=`${st>(O.edit?1:0)?`<button onclick="ONBX.back()">Back</button>`:''}<button class="ob-skip" onclick="ONBX.skip()">Skip</button><button class="p" onclick="ONBX.next()">${last?(O.edit?'Save':'Finish'):'Next'}</button>`;
@@ -4460,24 +4471,27 @@ const X=window.ONBX={
   setDay(d){O.day=d;draw()},
   setCell(sid,dw,v){O.d.grid[sid]=O.d.grid[sid]||{};if(v)O.d.grid[sid][dw]=v;else delete O.d.grid[sid][dw]},
   copyDay(){O.d.slots.forEach(x=>{const v=(O.d.grid[x.id]||{})[O.day];ORD.forEach(dw=>{if(dw===O.day)return;O.d.grid[x.id]=O.d.grid[x.id]||{};if(v)O.d.grid[x.id][dw]=v;else delete O.d.grid[x.id][dw]})});toast2('Copied to all days')},
+  setTarget(v,keep){O.d.target=Math.min(100,Math.max(1,parseInt(v)||75));if(!keep||true)draw()},
   toggleSat(n){const a=O.d.sat,i=a.indexOf(n);if(i>=0)a.splice(i,1);else a.push(n);draw()},
   addHol(){O.d.hols.push({from:'',to:'',name:''});draw()},
   delHol(i){O.d.hols.splice(i,1);draw()},
   setHol(i,k,v){O.d.hols[i][k]=v},
   setOff(n,b){const a=O.d.off;const i=a.indexOf(n);if(b&&i<0)a.push(n);if(!b&&i>=0)a.splice(i,1)},
   setAsg(b){O.d.asg=!!b},
-  setXyes(b){O.d.xyes=!!b;if(b&&!O.d.xtra.length)X.addX();else draw()},
-  addX(){const sl=O.d.slots.slice().sort((a,b)=>(a.s||'').localeCompare(b.s||''));O.d.xtra.push({sub:'',dow:1,slot:sl.length?sl[0].id:'new',s:'',e:''});draw()},
+  setXyes(b){O.d.xyes=!!b;draw()},
+  setXday(k){O.xday=k;draw()},
+  setXcell(sid,v){const dw=O.xday||1,i=O.d.xtra.findIndex(x=>x.slot===sid&&+x.dow===dw);if(!v){if(i>=0)O.d.xtra.splice(i,1)}else if(i>=0)O.d.xtra[i].sub=v;else O.d.xtra.push({sub:v,dow:dw,slot:sid,s:'',e:''})},
+  addX(){O.d.xtra.push({sub:'',dow:O.xday||1,slot:'new',s:'',e:''});draw()},
   delX(i){O.d.xtra.splice(i,1);draw()},
   setX(i,k,v){O.d.xtra[i][k]=k==='dow'?+v:v;if(k==='slot')draw()},
   setPalX(k){setPal(k);draw()},
   next(){const st=O.step;if(busy)return;
-    if(st===1)commitTT();else if(st===2)commitExtra();else if(st===3)commitHol();else if(st===4)commitAsg();
+    if(st===1)commitTT();else if(st===2)commitExtra();else if(st===3)commitHol();else if(st===4)commitTarget();else if(st===5)commitAsg();
     if(st===LAST()){swipe(finish,1);return}
     swipe(()=>{O.step=st+1;draw(true)},-1)},
   back(){if(busy)return;if(O.step>(O.edit?1:0)){swipe(()=>{O.step--;draw(true)},1)}},
   skip(){const st=O.step;if(busy)return;
-    if(st===4&&!O.edit){ensureCustom();S.asgAuto=0;save();if(window.asgSyncFromTT)window.asgSyncFromTT(true)}
+    if(st===5&&!O.edit){ensureCustom();S.asgAuto=0;save();if(window.asgSyncFromTT)window.asgSyncFromTT(true)}
     if(st===LAST()){swipe(finish,-1);return}
     swipe(()=>{O.step=st+1;draw(true)},-1)},
   skipAll(){ensureCustom();S.asgAuto=0;save();if(window.asgSyncFromTT)window.asgSyncFromTT(true);swipe(finish,-1)},
