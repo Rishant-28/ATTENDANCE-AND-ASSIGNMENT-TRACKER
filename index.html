@@ -1375,6 +1375,13 @@ body.onb-custom #ttTools button[onclick^="loadPreset"]{display:none}
 #onb .ob-busy{flex:1;font-size:13px;color:var(--mu);padding:10px 12px;border:1px dashed var(--pbd);border-radius:12px}
 #onb .ob-sats{display:flex;gap:8px}
 #onb .ob-sats button{flex:1;padding:12px 0;font-weight:700}
+#onb .ob-photo{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border:1.5px dashed var(--ac);background:color-mix(in srgb,var(--ac) 8%,transparent);color:var(--ac);font-weight:700;border-radius:14px}
+#onb .ob-scan{margin-bottom:14px}
+#onb .ob-warn{margin:0 0 12px;padding:11px 13px;border-radius:12px;font-size:13px;line-height:1.45;background:#fff4d6;border:1px solid #f0c75e;color:#5c4400}
+#onb .ob-warn.bad{background:#ffe3e3;border-color:#f0a0a0;color:#6b1010}
+#onb .ob-warn.busy{background:color-mix(in srgb,var(--ac) 12%,transparent);border-color:var(--ac);color:var(--tx)}
+html[data-theme=dark] #onb .ob-warn{background:#3a2f0a;color:#ffe9a8;border-color:#7a6320}
+html[data-theme=dark] #onb .ob-warn.bad{background:#3d1414;color:#ffc9c9;border-color:#7a2a2a}
 #onb .ob-tg{flex-wrap:wrap}
 #onb .ob-tg button{flex:1 0 28%}
 #onb .ob-sats button.on{background:var(--ac);border-color:var(--ac);color:#fff}
@@ -1419,7 +1426,7 @@ body.onb-custom #ttTools button[onclick^="loadPreset"]{display:none}
 <div class="card" id="ttCard"><div class="row" style="justify-content:space-between;flex-wrap:nowrap;margin-bottom:10px"><h2 style="margin:0">Weekly timetable</h2><button id="ttEdit" onclick="toggleEdit()"></button></div>
 <div class="tw"><table id="tt"></table></div>
 <div class="xtn"><i></i>Yellow = extra class</div>
-<div id="ttTools"><div class="row"><button class="p" onclick="addSlot()">+ Add time slot</button><button onclick="loadPreset()">Load Sec C timetable</button></div>
+<div id="ttTools"><div class="row"><button class="p" onclick="addSlot()">+ Add time slot</button><button onclick="loadPreset()">Load Sec C timetable</button></div><div class="row" style="margin-top:8px"><button onclick="ttPhoto()">📷 Fill empty periods from a photo</button></div><div class="mu" style="font-size:12px;margin-top:4px">Only empty periods are filled; nothing already set is changed. Photo reading can make mistakes, so you can verify before it is applied.</div>
 <div class="mu">Edit the times, then pick a subject in each day's box. For a lab, pick the subject and tap "🔗 Lab (2 slots)" under it so both slots count as one class (use "✂ Split" to undo). "Load" resets the timetable to Sec C (attendance counts stay the same).</div></div></div>
 
 <div class="card"><div class="row" style="justify-content:space-between;flex-wrap:nowrap;margin-bottom:10px"><h2 style="margin:0">Today</h2><div style="display:flex;gap:8px"><button id="tdOff" onclick="offToggle()">Off</button><button id="tdEdit" onclick="toggleTdEdit()"></button></div></div>
@@ -1465,7 +1472,7 @@ body.onb-custom #ttTools button[onclick^="loadPreset"]{display:none}
 <div class="row mu">Target %: <input type="number" id="target" min="1" max="100"></div>
 <div class="row"><input class="nm" id="newSub" placeholder="New subject (e.g. DSA)"><button class="p" onclick="addSub()">+ Add</button></div>
 <div class="mu">Attended = classes you attended, Total = classes held so far.</div></div></div>
-<div class="card" id="onbCard"><h2>Setup</h2><div class="mu" style="margin-bottom:8px">Change your subjects, class timings, weekly timetable and holidays step by step. Your attendance numbers stay as they are.</div><div class="row"><button class="p" onclick="onbOpen(true)">✏️ Edit timetable &amp; holidays</button><button onclick="asgSyncFromTT('manual');S.asgAuto=1;save();toast&&toast('Assignments updated')">↻ Sync Assignments</button></div></div>
+<div class="card" id="onbCard"><h2>Setup</h2><div class="mu" style="margin-bottom:8px">Change your subjects, class timings, weekly timetable and holidays step by step. Your attendance numbers stay as they are.</div><div class="row"><button class="p" onclick="onbOpen(true)">✏️ Edit timetable &amp; holidays</button><button onclick="asgSyncFromTT('manual');S.asgAuto=1;save();toast&&toast('Assignments updated')">↻ Sync Assignments</button></div><div class="row" style="margin-top:8px"><button onclick="onbOpen(true,1,'tt')">📷 Timetable from photo</button><button onclick="onbOpen(true,3,'hol')">📷 Holidays from photo</button></div><div class="mu" style="margin-top:6px;font-size:12px">Photo reading can make mistakes. You will be asked to verify before anything is saved.</div></div>
 <div class="card"><h2>Backup</h2><div class="mu" style="margin-bottom:8px">Saves your attendance, timetable, holidays and daily records to a file. Assignments and marks are not included.</div><div class="row"><button class="p" onclick="exportData()">⬇ Download backup</button><button onclick="$('impF').click()">Restore from file</button><input type="file" id="impF" accept=".json,application/json" style="display:none" onchange="importData(this)"></div><div class="mu" id="bkMsg"></div></div>
 </section>
 </main>
@@ -4385,6 +4392,142 @@ try{if(h){F=FX.find(x=>x.id===h[1]);show(F,1)}else{const sp=(typeof S!=='undefin
  if(sp!=='off'){const fe=fo?pick(new Date()):null;F=fe||FX.find(x=>x.id===(sp||'plain'));show(F,0)}}}catch(e){}
 })();
 </script>
+<script>
+/* ===== Photo reading helpers (timetable + holidays). Pure functions: no DOM. ===== */
+(function(root){
+const MON={jan:1,january:1,feb:2,february:2,mar:3,march:3,apr:4,april:4,may:5,jun:6,june:6,jul:7,july:7,aug:8,august:8,sep:9,sept:9,september:9,oct:10,october:10,nov:11,november:11,dec:12,december:12};
+const MRE='(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sept?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)';
+const P2=n=>String(n).padStart(2,'0');
+function iso(y,m,d){if(m<1||m>12||d<1||d>31)return null;const dt=new Date(y,m-1,d);if(dt.getMonth()!==m-1)return null;return y+'-'+P2(m)+'-'+P2(d)}
+function fixYear(y,m,d,today){if(y){if(y<100)y+=2000;return y}let yy=today.getFullYear();const dt=new Date(yy,m-1,d);if(today-dt>200*864e5)yy++;return yy}
+function clean(s){return s.replace(/[|_~\[\]{}<>=*•·●○■□]/g,' ').replace(/\s+/g,' ').replace(/^[\s\-–—:,.;()]+|[\s\-–—:,.;()]+$/g,'').trim()}
+const WD=/\b(mon|tues?|wed(?:nes)?|thu(?:rs?)?|fri|sat(?:ur)?|sun)(?:day)?\b\.?/ig;
+/* ---- holidays: lines of text -> [{from,to,name}] ---- */
+function parseHolidays(text,today){today=today||new Date();const out=[],seen={};
+ String(text).split(/\r?\n/).forEach(raw=>{let line=raw.replace(/\s+/g,' ').trim().replace(/^(?:s\.?\s?no\.?\s*)?\d{1,2}\s*[.)]\s+/i,'');if(line.length<5)return;
+  let found=[],rest=line,m;
+  const num=/(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{2,4})/g;
+  while((m=num.exec(line))){const d=+m[1],mo=+m[2];const y=fixYear(+m[3],mo,d,today);const v=iso(y,mo,d);if(v)found.push({v,s:m.index,e:num.lastIndex})}
+  if(!found.length){
+   const r2=new RegExp('(\\d{1,2})(?:st|nd|rd|th)?\\s*(?:[-–—]|to)?\\s*(\\d{1,2})?(?:st|nd|rd|th)?\\s*(?:of\\s+)?'+MRE+'\\.?,?\\s*(\\d{4})?','ig');
+   while((m=r2.exec(line))){const d1=+m[1],d2=m[2]?+m[2]:0,mo=MON[m[3].toLowerCase()],y=m[4]?+m[4]:0;const yy=fixYear(y,mo,d1,today);const a=iso(yy,mo,d1);if(!a)continue;found.push({v:a,s:m.index,e:r2.lastIndex});if(d2&&d2>=d1){const b=iso(yy,mo,d2);if(b)found.push({v:b,s:m.index,e:r2.lastIndex})}}
+   if(!found.length){const r3=new RegExp(MRE+'\\.?\\s*(\\d{1,2})(?:st|nd|rd|th)?\\s*(?:[-–—]|to)?\\s*(\\d{1,2})?,?\\s*(\\d{4})?','ig');
+    while((m=r3.exec(line))){const mo=MON[m[1].toLowerCase()],d1=+m[2],d2=m[3]?+m[3]:0,y=m[4]?+m[4]:0;const yy=fixYear(y,mo,d1,today);const a=iso(yy,mo,d1);if(!a)continue;found.push({v:a,s:m.index,e:r3.lastIndex});if(d2&&d2>=d1){const b=iso(yy,mo,d2);if(b)found.push({v:b,s:m.index,e:r3.lastIndex})}}}}
+  if(!found.length)return;
+  found.sort((a,b)=>a.s-b.s);
+  let from=found[0].v,to=found[found.length-1].v;if(to<from)to=from;
+  let name=line;const spans=[];found.forEach(f=>{if(!spans.some(p=>p.s===f.s&&p.e===f.e))spans.push(f)});for(let i=spans.length-1;i>=0;i--)name=name.slice(0,spans[i].s)+' '+name.slice(spans[i].e);
+  name=clean(name.replace(WD,' ').replace(/\b(to|till|and|from)\b/ig,' ').replace(/\bS\.?\s?No\.?\b/ig,' ').replace(/^\d{1,2}[.)]\s+/,''));
+  if(name.length>40)name=name.slice(0,40).trim();
+  if(!/[a-z]{3}/i.test(name))name='';
+  if(from===to&&new Date(from+'T00:00').getDay()===0)return;   /* Sundays are off anyway */
+  const k=from+'|'+to;if(seen[k])return;seen[k]=1;out.push({from,to,name})});
+ return out.sort((a,b)=>a.from.localeCompare(b.from))}
+/* ---- timetable: OCR words with boxes -> {subs,slots,grid} ---- */
+const DAYRE=/^(mon|tue|tues|wed|thu|thur|thurs|fri|sat)(?:day|sday|nesday|rsday|urday)?\.?$/i;
+const DOWN={mon:1,tue:2,wed:3,thu:4,fri:5,sat:6};
+const BREAK=/^(lunch|break|recess|interval|lunch break|short break)$/i;
+const med=a=>{const s=a.slice().sort((x,y)=>x-y);return s.length?s[Math.floor(s.length/2)]:0};
+const sd=a=>{const m=a.reduce((x,y)=>x+y,0)/a.length;return Math.sqrt(a.reduce((x,y)=>x+(y-m)*(y-m),0)/a.length)};
+function hh(h){h=+h;if(h<7)h+=12;return h}
+function parseTimetable(words){
+ const W=words.map(w=>({t:String(w.text||'').trim(),x0:w.bbox.x0,x1:w.bbox.x1,y0:w.bbox.y0,y1:w.bbox.y1,c:w.confidence==null?100:w.confidence})).filter(w=>w.t&&w.c>15);
+ W.forEach(w=>{w.cx=(w.x0+w.x1)/2;w.cy=(w.y0+w.y1)/2});
+ const days=[];W.forEach(w=>{const t=w.t.replace(/[^A-Za-z.]/g,'');if(DAYRE.test(t)){const k=DOWN[t.slice(0,3).toLowerCase()];if(k&&!days.some(d=>d.dow===k))days.push({dow:k,cx:w.cx,cy:w.cy,w})}});
+ if(days.length<3)return{ok:false,why:'days'};
+ const rowsMode=sd(days.map(d=>d.cy))>sd(days.map(d=>d.cx));   /* days listed top to bottom */
+ /* time points */
+ const pts=[];W.forEach((w,i)=>{let m;const re1=/(\d{1,2})\s*[:.]\s*(\d{2})/g;const n0=pts.length;
+  while((m=re1.exec(w.t))){const h=+m[1];if(h>=1&&h<=23&&+m[2]<60)pts.push({h:hh(h),m:+m[2],cx:w.cx,cy:w.cy,hgt:w.y1-w.y0,x0:w.x0,x1:w.x1,i})}
+  if(pts.length===n0){const r=/^(\d{1,2})\s*[-–—]\s*(\d{1,2})$/.exec(w.t);if(r&&+r[1]>=1&&+r[1]<=12&&+r[2]>=1&&+r[2]<=12){pts.push({h:hh(r[1]),m:0,cx:w.x0+(w.x1-w.x0)*.25,cy:w.cy,hgt:w.y1-w.y0,i});pts.push({h:hh(r[2]),m:0,cx:w.x0+(w.x1-w.x0)*.75,cy:w.cy,hgt:w.y1-w.y0,i})}}});
+ /* order points: reading order by line then x (rowsMode header is one line; else column header text stacked) */
+ const hgt=med(pts.map(p=>p.hgt))||20;
+ const key=rowsMode?(p=>[Math.round(p.cy/(hgt*1.2)),p.cx]):(p=>[Math.round(p.cx/(hgt*3)),p.cy]);
+ /* use document order instead: OCR emits words in reading order inside a block */
+ const ranges=[];for(let i=0;i+1<pts.length;i++){const a=pts[i],b=pts[i+1];const ta=a.h*60+a.m,tb=b.h*60+b.m;
+  if(tb>ta&&tb-ta<=190&&Math.abs(a.cy-b.cy)<hgt*(rowsMode?1.2:3.5)&&(rowsMode?b.cx>a.cx:true)){ranges.push({s:P2(a.h)+':'+P2(a.m),e:P2(b.h)+':'+P2(b.m),cx:(a.cx+b.cx)/2,cy:(a.cy+b.cy)/2,x0:a.x0||a.cx,x1:b.x1||b.cx});i++}}
+ /* drop duplicates of the same range */
+ const slots=[];ranges.forEach(r=>{if(!slots.some(s=>s.s===r.s&&s.e===r.e))slots.push(r)});
+ if(slots.length<1)return{ok:false,why:'slots'};
+ slots.sort((a,b)=>rowsMode?a.cx-b.cx:a.cy-b.cy);
+ const dsort=days.slice().sort((a,b)=>rowsMode?a.cy-b.cy:a.cx-b.cx);
+ const bands=(arr,axis)=>arr.map(a=>a[axis]);
+ const slotC=bands(slots,rowsMode?'cx':'cy'),dayC=bands(dsort,rowsMode?'cy':'cx');
+ const gap=a=>a.length>1?med(a.slice(1).map((v,i)=>v-a[i])):0;
+ const sg=gap(slotC)||200,dg=gap(dayC)||80;
+ const used=new Set([...days.map(d=>d.w),...pts.map(p=>W[p.i])]);
+ const cells={};    /* key slotIdx|dow -> words */
+ const nearest=(c,arr)=>{let bi=-1,bd=1e9;arr.forEach((v,i)=>{const d=Math.abs(v-c);if(d<bd){bd=d;bi=i}});return[bi,bd]};
+ W.forEach(w=>{if(used.has(w))return;if(/^[\W_]+$/.test(w.t))return;
+  const sa=rowsMode?w.cx:w.cy,da=rowsMode?w.cy:w.cx;
+  const [si,sdst]=nearest(sa,slotC),[di,ddst]=nearest(da,dayC);
+  if(sdst>sg*.62||ddst>dg*.62)return;
+  const k=si+'|'+dsort[di].dow;(cells[k]=cells[k]||[]).push(w)});
+ const names=[],grid={};let n=0;
+ Object.keys(cells).forEach(k=>{const [si,dow]=k.split('|').map(Number);
+  const ws=cells[k].sort((a,b)=>Math.abs(a.cy-b.cy)>hgt*.7?a.cy-b.cy:a.cx-b.cx);
+  let t=clean(ws.map(w=>w.t).join(' ').replace(/\(.*$/,' '));
+  if(t.length<2||BREAK.test(t)||/^[\d\s.\-/]+$/.test(t))return;
+  t=t.replace(/\s+(lab|practical)\b/i,' Lab').replace(/\bLAB\b/,'Lab');if(t.length>28)t=t.slice(0,28).trim();
+  grid[k]=t;n++;
+  const edge=rowsMode?Math.max(...ws.map(w=>w.x1)):Math.max(...ws.map(w=>w.y1));
+  const mid=(slotC[si]+(slotC[si+1]==null?slotC[si]+sg:slotC[si+1]))/2;
+  if(si+1<slotC.length&&edge>mid+sg*.12&&!cells[(si+1)+'|'+dow])grid[(si+1)+'|'+dow]='cont'});
+ if(!n)return{ok:false,why:'cells'};
+ /* unify names, drop unused slots */
+ const canon={};const norm=s=>s.toLowerCase().replace(/[^a-z0-9]/g,'');
+ Object.keys(grid).forEach(k=>{if(grid[k]==='cont')return;const nk=norm(grid[k]);if(!canon[nk]){canon[nk]=grid[k];names.push(grid[k])}grid[k]=canon[nk]});
+ const keep=[];slots.forEach((s,i)=>{if(Object.keys(grid).some(k=>k.split('|')[0]==i))keep.push(i)});
+ const outSlots=keep.map(i=>({s:slots[i].s,e:slots[i].e}));
+ const outGrid=[];keep.forEach((i,j)=>{const row={};Object.keys(grid).forEach(k=>{const [si,dow]=k.split('|');if(+si===i)row[dow]=grid[k]});outGrid.push(row)});
+ /* a 'cont' needs a lab above it */
+ return{ok:true,subs:names,slots:outSlots,grid:outGrid,orientation:rowsMode?'days-down':'days-across',cells:n}}
+root.ObScan={parseHolidays,parseTimetable};
+if(typeof module!=='undefined')module.exports=root.ObScan;
+})(typeof window!=='undefined'?window:globalThis);
+
+</script>
+
+<script>
+/* Photo -> fill EMPTY periods of the existing timetable (safe for every user; never overwrites) */
+(function(){
+const nm=s=>String(s).toLowerCase().replace(/[^a-z0-9]/g,'');
+const mins=t=>{const a=String(t).split(':');return(+a[0])*60+(+a[1]||0)};
+const DNAME=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+let ov=null;
+function box(html){if(!ov){ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;z-index:100001;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px';document.body.appendChild(ov)}
+ ov.innerHTML='<div style="background:var(--pcard,#fff);color:var(--tx,#111);border:1px solid var(--pbd,#ddd);border-radius:20px;max-width:420px;width:100%;max-height:86vh;display:flex;flex-direction:column;box-shadow:0 0 24px color-mix(in srgb,var(--ac,#0a7) 40%,transparent)"><div style="padding:18px 18px 8px;overflow:auto;flex:1">'+html+'</div></div>'}
+function close(){if(ov){ov.remove();ov=null}}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function plan(r){const fills=[],skip=[];
+ r.slots.forEach((ps,i)=>{const slot=S.slots.find(x=>Math.abs(mins(x.s)-mins(ps.s))<=20);
+  Object.keys(r.grid[i]).forEach(dw=>{const name=r.grid[i][dw];const lab=DNAME[+dw]+' '+ps.s;
+   if(!slot){skip.push(lab+': no period at this time in your timetable');return}
+   const cur=(S.grid[slot.id]||{})[dw];if(cur){return}
+   if(name==='cont'){fills.push({sid:slot.id,dw,val:'cont',lab:lab+' → lab continues'});return}
+   const sub=S.subs.find(s=>nm(s.name)===nm(name))||S.subs.find(s=>nm(name).length>2&&(nm(s.name).includes(nm(name))||nm(name).includes(nm(s.name))));
+   if(!sub){skip.push(lab+': “'+name+'” is not one of your subjects');return}
+   fills.push({sid:slot.id,dw,val:sub.id,lab:lab+' → '+sub.name})})});
+ return{fills,skip}}
+window.ttPhoto=function(){const i=document.createElement('input');i.type='file';i.accept='image/*';
+ i.onchange=async()=>{const f=i.files&&i.files[0];if(!f)return;
+  box('<h3 style="margin:0 0 8px">Reading your photo…</h3><div id="ttpMsg" class="mu">0%</div>');
+  try{const d=await window.ONB_OCR(f,'tt',p=>{const e=document.getElementById('ttpMsg');if(e)e.textContent=p+'%'});
+   const r=ObScan.parseTimetable(d.words||[]);
+   if(!r.ok){box('<h3 style="margin:0 0 8px">Could not read a timetable</h3><p class="mu">Use a straight, bright, cropped photo with day names and class timings visible.</p><div style="text-align:right;padding:10px 0"><button class="p" onclick="ttPhotoClose()">OK</button></div>');return}
+   const pl=plan(r);window.__ttPlan=pl;
+   box('<h3 style="margin:0 0 6px">Check before applying</h3><div style="background:#fff4d6;border:1px solid #f0c75e;color:#5c4400;border-radius:12px;padding:9px 11px;font-size:13px;margin-bottom:10px">Please verify the timetable. Photo reading can make mistakes.</div>'
+    +(pl.fills.length?'<div class="mu" style="margin-bottom:4px">'+pl.fills.length+' empty period'+(pl.fills.length>1?'s':'')+' will be filled:</div><div style="font-size:13px;line-height:1.6">'+pl.fills.map(x=>esc(x.lab)).join('<br>')+'</div>':'<div class="mu">Nothing to fill: every period found in the photo is already set, or has no match.</div>')
+    +(pl.skip.length?'<div class="mu" style="margin-top:10px;margin-bottom:4px">Skipped:</div><div style="font-size:12px;opacity:.8;line-height:1.5">'+pl.skip.map(esc).join('<br>')+'</div>':'')
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;padding:14px 0 6px"><button onclick="ttPhotoClose()">Cancel</button>'+(pl.fills.length?'<button class="p" onclick="ttPhotoApply()">Fill '+pl.fills.length+' period'+(pl.fills.length>1?'s':'')+'</button>':'')+'</div>')
+  }catch(e){box('<h3 style="margin:0 0 8px">Could not read this photo</h3><p class="mu">'+(/reader/.test(String(e&&e.message))?'The photo reader needs an internet connection the first time.':'Try a clearer photo.')+'</p><div style="text-align:right;padding:10px 0"><button class="p" onclick="ttPhotoClose()">OK</button></div>')}};
+ i.click()};
+window.ttPhotoClose=close;
+window.ttPhotoApply=function(){const pl=window.__ttPlan;if(!pl)return close();
+ pl.fills.forEach(x=>{S.grid[x.sid]=S.grid[x.sid]||{};if(!S.grid[x.sid][x.dw])S.grid[x.sid][x.dw]=x.val});
+ close();try{save();render()}catch(e){}if(window.toast)toast('Filled '+pl.fills.length+' period'+(pl.fills.length>1?'s':'')+' - please verify')};
+})();
+</script>
 <div id="onb"></div>
 <script>
 /* ===== First-run setup wizard: timetable -> holidays -> assignments (every step can be skipped) ===== */
@@ -4427,7 +4570,34 @@ function commitAsg(){const d=O.d;ensureCustom();
 
 /* ---------- draw ---------- */
 function opts(val,i){return'<option value="">— free —</option>'+O.d.subs.filter(s=>s.name.trim()).map(s=>`<option value="${s.id}"${val===s.id?' selected':''}>${E(s.name)}</option>`).join('')+(i>0?`<option value="cont"${val==='cont'?' selected':''}>↳ Lab: continues the slot above</option>`:'')}
-function stepTT(){const d=O.d,sl=d.slots.slice().sort((a,b)=>(a.s||'').localeCompare(b.s||''));let h=`<h2>Your timetable</h2><p class="mu">Add your subjects, set your class timings, then choose the subject for every period. You can change all of this later.</p>`;
+const SC_NOTE='Photo reading can make mistakes. Please verify everything before continuing.';
+function scanBox(kind){const v=O.scan;let b='';
+  if(v&&v.kind===kind){b=`<div class="ob-warn ${v.state==='busy'?'busy':v.state==='err'?'bad':''}"><span id="obScanMsg">${E(v.msg)}</span></div>`}
+  return`<div class="ob-scan"><button class="ob-photo" onclick="ONBX.pick('${kind}')"${v&&v.state==='busy'?' disabled':''}>📷 ${kind==='tt'?'Fill timetable from a photo':'Fill holidays from a photo'}</button>${b||`<div class="ob-note">${SC_NOTE}</div>`}</div>`}
+function loadT(){return window.Tesseract?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';s.onload=res;s.onerror=()=>rej(new Error('reader'));document.head.appendChild(s)})}
+async function prepImg(file){const bm=await createImageBitmap(file);const m=Math.max(bm.width,bm.height);const k=Math.min(3,Math.max(1,2000/m),2600/m);const cv=document.createElement('canvas');cv.width=Math.round(bm.width*k);cv.height=Math.round(bm.height*k);const c=cv.getContext('2d');c.drawImage(bm,0,0,cv.width,cv.height);
+  const d=c.getImageData(0,0,cv.width,cv.height),a=d.data;let lo=255,hi=0;for(let i=0;i<a.length;i+=4){const g=.3*a[i]+.59*a[i+1]+.11*a[i+2];a[i]=a[i+1]=a[i+2]=g;if(g<lo)lo=g;if(g>hi)hi=g}
+  const sc=hi>lo?255/(hi-lo):1;for(let i=0;i<a.length;i+=4){const g=Math.max(0,Math.min(255,(a[i]-lo)*sc));a[i]=a[i+1]=a[i+2]=g}c.putImageData(d,0,0);return cv}
+async function ocr(file,kind,onp){await loadT();const cv=await prepImg(file);const w=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.status==='recognizing text')onp(Math.round(m.progress*100))}});
+  try{await w.setParameters({tessedit_pageseg_mode:kind==='tt'?'11':'6',preserve_interword_spaces:'1'});const r=await w.recognize(cv);return r.data}finally{try{await w.terminate()}catch(e){}}}
+function setScan(kind,state,msg){O.scan={kind,state,msg};draw()}
+function applyTT(r){const d=O.d;const had=d.slots.length&&Object.keys(d.grid).some(k=>Object.keys(d.grid[k]||{}).length);
+  if(had&&!confirm('Replace your current timetable with the one read from the photo?'))return false;
+  const idOf={};r.subs.forEach(n=>{let s=d.subs.find(x=>norm(x.name)===norm(n));if(!s){s={id:rid('sub_'),name:n,att:0,tot:0};d.subs.push(s)}idOf[n]=s.id});
+  d.slots=r.slots.map(s=>({id:rid('n'),s:s.s,e:s.e}));d.grid={};
+  r.grid.forEach((row,i)=>{const sid=d.slots[i].id;d.grid[sid]={};Object.keys(row).forEach(dw=>{d.grid[sid][dw]=row[dw]==='cont'?'cont':idOf[row[dw]]})});return true}
+function applyHol(list){const d=O.d;let n=0;list.forEach(x=>{if(!d.hols.some(h=>h.from===x.from&&(h.to||h.from)===x.to)){d.hols.push({from:x.from,to:x.to,name:x.name});n++}});d.hols.sort((a,b)=>(a.from||'9').localeCompare(b.from||'9'));return n}
+async function runScan(kind,file){setScan(kind,'busy','Reading your photo… 0%');
+  const onp=p=>{const el=document.getElementById('obScanMsg');if(el)el.textContent='Reading your photo… '+p+'%'};
+  try{const data=await ocr(file,kind,onp);
+    if(kind==='tt'){const r=ObScan.parseTimetable(data.words||[]);
+      if(!r.ok||!applyTT(r)){setScan(kind,'err',r.ok?'Cancelled. Your timetable was not changed.':'Could not find a timetable in this photo. Use a straight, bright, cropped photo with day names and class timings visible, or fill it in by hand.');return}
+      O.day=1;setScan(kind,'ok',`✅ Read ${r.subs.length} subject${r.subs.length>1?'s':''} and ${r.slots.length} time slot${r.slots.length>1?'s':''}. Please verify the timetable (subjects, timings, every day) before continuing. Photo reading can make mistakes.`)}
+    else{const list=ObScan.parseHolidays(data.text||'');const n=applyHol(list);
+      if(!n){setScan(kind,'err','Could not find holiday dates in this photo. Use a clear, cropped photo of the list, or add the dates by hand.');return}
+      setScan(kind,'ok',`✅ Added ${n} holiday${n>1?'s':''} from your photo. Please verify the dates and names before continuing. Photo reading can make mistakes.`)}
+  }catch(e){setScan(kind,'err',/reader/.test(String(e&&e.message))?'The photo reader could not load. It needs an internet connection the first time. Please fill this in by hand or try again.':'Could not read this photo. Please try a clearer one, or fill it in by hand.')}}
+function stepTT(){const d=O.d,sl=d.slots.slice().sort((a,b)=>(a.s||'').localeCompare(b.s||''));let h=`<h2>Your timetable</h2><p class="mu">Add your subjects, set your class timings, then choose the subject for every period. You can change all of this later.</p>`+scanBox('tt');
   h+=`<div class="ob-sec"><h3>1. Subjects</h3><div class="ob-add"><input id="obSub" placeholder="Subject name, e.g. DSA" onkeydown="if(event.key==='Enter'){ONBX.addSub()}"><button class="p" onclick="ONBX.addSub()">Add</button></div>`;
   h+=d.subs.length?`<div class="ob-chips">${d.subs.map(s=>`<span class="ob-chip">${E(s.name)}<b onclick="ONBX.delSub('${s.id}')">✕</b></span>`).join('')}</div>`:`<div class="ob-note">No subjects yet. Add a lab as its own subject, e.g. "DSA Lab".</div>`;
   if(d.subs.length)h+=`<details><summary>Already have attendance numbers? (optional)</summary><div style="margin-top:10px">${d.subs.map(s=>`<div class="ob-row"><span class="nm" style="font-weight:600">${E(s.name)}</span><input class="ob-num" type="number" inputmode="numeric" min="0" value="${s.att||0}" onchange="ONBX.setSub('${s.id}','att',this.value)" aria-label="Attended"><span class="dash">/</span><input class="ob-num" type="number" inputmode="numeric" min="0" value="${s.tot||0}" onchange="ONBX.setSub('${s.id}','tot',this.value)" aria-label="Total"></div>`).join('')}<div class="ob-note">Attended / total classes held so far.</div></div></details>`;
@@ -4435,7 +4605,7 @@ function stepTT(){const d=O.d,sl=d.slots.slice().sort((a,b)=>(a.s||'').localeCom
   h+=`<div class="ob-sec"><h3>3. Weekly grid</h3><div class="ob-days">${ORD.map(dw=>`<button class="${O.day===dw?'on':''}" onclick="ONBX.setDay(${dw})">${DN[dw]}</button>`).join('')}</div>`;
   h+=sl.length&&d.subs.length?sl.map((x,i)=>`<div class="ob-cell"><span>${t12(x.s)} – ${t12(x.e)}</span><select onchange="ONBX.setCell('${x.id}',${O.day},this.value)">${opts((d.grid[x.id]||{})[O.day]||'',i)}</select></div>`).join('')+`<button onclick="ONBX.copyDay()" style="margin-top:4px">Copy ${DN[O.day]} to all days</button><div class="ob-note">Leave a period on "free" if there is no class. For a 2-slot lab pick the subject in the first slot and "continues" in the next.</div>`:`<div class="ob-note">Add at least one subject and one time slot to fill the grid.</div>`;
   return h+'</div>'}
-function stepHol(){const d=O.d;let h=`<h2>Holidays</h2><p class="mu">Days with no classes are not counted. Sundays are off automatically.</p><div class="ob-sec"><h3>Saturdays off</h3><div class="ob-sats">${[1,2,3,4].map(n=>`<button class="${d.sat.includes(n)?'on':''}" onclick="ONBX.toggleSat(${n})">${n}${['','st','nd','rd','th'][n]}</button>`).join('')}</div><div class="ob-note">Tap the Saturdays that are holidays, e.g. 2nd and 4th.</div></div><div class="ob-sec"><h3>Holiday dates</h3>`;
+function stepHol(){const d=O.d;let h=`<h2>Holidays</h2><p class="mu">Days with no classes are not counted. Sundays are off automatically.</p>`+scanBox('hol')+`<div class="ob-sec"><h3>Saturdays off</h3><div class="ob-sats">${[1,2,3,4].map(n=>`<button class="${d.sat.includes(n)?'on':''}" onclick="ONBX.toggleSat(${n})">${n}${['','st','nd','rd','th'][n]}</button>`).join('')}</div><div class="ob-note">Tap the Saturdays that are holidays, e.g. 2nd and 4th.</div></div><div class="ob-sec"><h3>Holiday dates</h3>`;
   h+=d.hols.map((x,i)=>`<div class="ob-row"><input class="nm" placeholder="Name (optional)" value="${E(x.name)}" onchange="ONBX.setHol(${i},'name',this.value)"><button class="ob-rm" onclick="ONBX.delHol(${i})" aria-label="Remove">✕</button></div><div class="ob-row" style="margin-top:-2px"><input type="date" value="${x.from||''}" onchange="ONBX.setHol(${i},'from',this.value)"><span class="dash">to</span><input type="date" value="${x.to||''}" onchange="ONBX.setHol(${i},'to',this.value)"></div>`).join('')||'<div class="ob-note" style="margin-bottom:8px">No holidays added yet.</div>';
   return h+`<button onclick="ONBX.addHol()">+ Add holiday</button><div class="ob-note">For a one-day holiday fill only the first date.</div></div>`}
 function stepAsg(){const d=O.d,names=S.subs.map(x=>x.name);let h=`<h2>Assignments</h2><p class="mu">The subjects in your timetable can be added to the Assignments section automatically (5 assignments each; labs become practicals).</p>`;
@@ -4479,10 +4649,11 @@ function swipe(fn,dir){const c=root().querySelector('.ob-card.cur');if(!c||busy)
   busy=true;const b1=root().querySelector('.ob-card.b1'),b2=root().querySelector('.ob-card.b2');
   c.classList.add(dir<0?'outL':'outR');if(b1)b1.classList.add('up1');if(b2)b2.classList.add('up2');
   setTimeout(()=>{busy=false;fn()},380)}
-function open(edit){O.edit=!!edit;O.d=edit?fromS():blankD();O.step=edit?1:0;O.day=1;O.shown=true;draw(true);root().classList.add('on');document.body.style.overflow='hidden'}
+function open(edit,step,pick){O.edit=!!edit;O.d=edit?fromS():blankD();O.step=edit?(step||1):0;O.day=1;O.scan=null;O.shown=true;draw(true);root().classList.add('on');document.body.style.overflow='hidden';if(pick)X.pick(pick)}
 function close(){O.shown=false;root().classList.remove('on');document.body.style.overflow='';cardSync()}
 function finish(){if(!S.custom)ensureCustom();save();render();if(window.mkSubjSync)window.mkSubjSync();close();cardSync()}
 const X=window.ONBX={
+  pick(kind){const i=document.createElement('input');i.type='file';i.accept='image/*';i.onchange=()=>{const f=i.files&&i.files[0];if(f)runScan(kind,f)};i.click()},
   addSub(){const i=document.getElementById('obSub'),n=i?i.value.trim():'';if(!n)return;if(O.d.subs.some(s=>norm(s.name)===norm(n))){i.value='';return}O.d.subs.push({id:rid('sub_'),name:n,att:0,tot:0});draw();const j=document.getElementById('obSub');if(j)j.focus()},
   delSub(id){O.d.subs=O.d.subs.filter(s=>s.id!==id);Object.keys(O.d.grid).forEach(k=>Object.keys(O.d.grid[k]).forEach(dw=>{if(O.d.grid[k][dw]===id)delete O.d.grid[k][dw]}));draw()},
   setSub(id,k,v){const s=O.d.subs.find(x=>x.id===id);if(s)s[k]=Math.max(0,parseInt(v)||0)},
@@ -4520,7 +4691,7 @@ const X=window.ONBX={
   open(e){open(e)}
 };
 function toast2(m){try{if(typeof toast==='function'){toast(m);return}}catch(e){}}
-window.onbOpen=open;window.onbClose=close;
+window.onbOpen=open;window.onbClose=close;window.ONB_OCR=ocr;
 window.onbMaybe=function(){if(O.shown||S.custom||S.pv||S.subs.length||S.slots.length)return;open(false)};
 cardSync();
 if(typeof claude==='undefined'||!claude.use)setTimeout(window.onbMaybe,350);else setTimeout(window.onbMaybe,2600);
