@@ -1360,7 +1360,10 @@ html[data-theme="dark"] .scan-card{background:#161c1d}html[data-theme="light"] .
 body.onb-custom #onbCard{display:block}
 body.onb-custom #ttTools button[onclick^="loadPreset"]{display:none}
 
-#onb .ob-stage{position:relative;width:100%;width:calc(100% - 84px);max-width:300px;height:min(590px,92%);margin-left:84px}
+#onb .ob-stage{position:relative;width:calc(100% - 96px);max-width:320px;height:min(590px,92%);margin:0 auto}
+#onb .ob-side{position:absolute;top:14px;writing-mode:vertical-rl;text-orientation:upright;letter-spacing:4px;font:800 15px/1 Corbel,'Segoe UI',system-ui,sans-serif;white-space:nowrap;pointer-events:none}
+#onb .ob-side.sL{right:calc(100% + 14px);color:var(--ac)}
+#onb .ob-side.sR{left:calc(100% + 14px);color:var(--tx);opacity:.85}
 #onb .ob-card{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--pcard,#fff);border:1px solid color-mix(in srgb,var(--ac) 45%,var(--pbd,#e3e6ef));border-radius:22px;overflow:hidden;transform-origin:90% 100%;
   box-shadow:0 0 0 1px color-mix(in srgb,var(--ac) 25%,transparent),0 0 14px 2px color-mix(in srgb,var(--ac) 45%,transparent),0 0 38px 6px color-mix(in srgb,var(--ac) 22%,transparent)}
 #onb .ob-card.cur{z-index:3;transition:transform .38s cubic-bezier(.4,.1,.2,1),opacity .38s}
@@ -1371,7 +1374,7 @@ body.onb-custom #ttTools button[onclick^="loadPreset"]{display:none}
 #onb .ob-card.b1::before,#onb .ob-card.b2::before{content:'ATTENDANCE';position:absolute;left:15px;top:18px;writing-mode:vertical-rl;text-orientation:upright;letter-spacing:3px;font:800 15px/1 Corbel,'Segoe UI',system-ui,sans-serif;color:var(--ac);white-space:nowrap}
 #onb .ob-card.b2::before{content:'ASSIGNMENT';color:var(--tx);left:26px;top:30px;opacity:.85}
 #onb .ob-card.b1{box-shadow:-10px 4px 20px rgba(0,0,0,.16),0 0 0 1px color-mix(in srgb,var(--ac) 25%,transparent),0 0 14px 2px color-mix(in srgb,var(--ac) 45%,transparent),0 0 38px 6px color-mix(in srgb,var(--ac) 22%,transparent)}
-#onb .ob-card.cur{box-shadow:-14px 6px 26px rgba(0,0,0,.22),0 0 0 1px color-mix(in srgb,var(--ac) 25%,transparent),0 0 14px 2px color-mix(in srgb,var(--ac) 45%,transparent),0 0 38px 6px color-mix(in srgb,var(--ac) 22%,transparent)}
+#onb .ob-card.cur{box-shadow:0 0 0 1px color-mix(in srgb,var(--ac) 25%,transparent),0 0 14px 2px color-mix(in srgb,var(--ac) 45%,transparent),0 0 38px 6px color-mix(in srgb,var(--ac) 22%,transparent)}
 #onb .ob-busy{flex:1;font-size:13px;color:var(--mu);padding:10px 12px;border:1px dashed var(--pbd);border-radius:12px}
 #onb .ob-sats{display:flex;gap:8px}
 #onb .ob-sats button{flex:1;padding:12px 0;font-weight:700}
@@ -1383,6 +1386,7 @@ body.onb-custom #ttTools button[onclick^="loadPreset"]{display:none}
 html[data-theme=dark] #onb .ob-warn{background:#3a2f0a;color:#ffe9a8;border-color:#7a6320}
 html[data-theme=dark] #onb .ob-warn.bad{background:#3d1414;color:#ffc9c9;border-color:#7a2a2a}
 #onb .ob-tg{flex-wrap:wrap}
+#onb .ob-am button{flex:1 1 45%}
 #onb .ob-tg button{flex:1 0 28%}
 #onb .ob-sats button.on{background:var(--ac);border-color:var(--ac);color:#fff}
 #onb .ob-card.b1.up1{transform:none}
@@ -4437,6 +4441,7 @@ function cellName(t){t=clean(t.replace(/\(.*$/,' '));
  t=t.replace(/-[A-Z]\b/g,'').replace(/-(NYB|VIB|[A-Z]{3})\b/g,'').replace(/\s+/g,' ').trim();
  t=t.replace(/\s+(lab|practical)\b/i,' Lab').replace(/\bLAB\b/,'Lab');
  return t.length>28?t.slice(0,28).trim():t}
+function roomOf(t){t=t.replace(/\(.*$/,' ').trim();const m=/\b([A-Z]{2,4})[\s-]*(\d{2,3}[A-Z]?)\s*$/.exec(t);return m?m[1]+' '+m[2]:''}
 function parseGrid(W,hgt){
  const AN=/^[|\[\]!]?(lecture|lec|period|class|slot)\.?$/i;
  let an=W.filter(w=>AN.test(w.t));if(an.length<3)return null;
@@ -4463,23 +4468,24 @@ function parseGrid(W,hgt){
  const byRow={};
  W.forEach(w=>{if(hdrWords.has(w)||lab.has(w)||w.cx<firstL||w.cy<hdrBottom-hgt*.5)return;if(/^[\W_]+$/.test(w.t))return;
   const k=Math.round((w.cy-a0)/b);if(k<1||k>6||Math.abs(w.cy-rowY(k))>b*.55)return;(byRow[k]=byRow[k]||[]).push(w)});
- const grid={};let cnt=0;
+ const grid={},rooms={};let cnt=0;
  Object.keys(byRow).forEach(k=>{const ws=byRow[k].sort((p,q)=>p.x0-q.x0);const groups=[];
   ws.forEach(w=>{const g=groups[groups.length-1];if(g&&w.x0-g.x1<hgt*2.6){g.ws.push(w);g.x1=Math.max(g.x1,w.x1)}else groups.push({ws:[w],x0:w.x0,x1:w.x1})});
-  groups.forEach(g=>{const t=cellName(g.ws.sort((p,q)=>Math.abs(p.cy-q.cy)>hgt*.7?p.cy-q.cy:p.x0-q.x0).map(w=>w.t).join(' '));
+  groups.forEach(g=>{const raw=g.ws.sort((p,q)=>Math.abs(p.cy-q.cy)>hgt*.7?p.cy-q.cy:p.x0-q.x0).map(w=>w.t).join(' ');const t=cellName(raw);
    if(t.length<2||BREAK.test(t)||/^[\d\s.\-/]+$/.test(t)||!/[A-Za-z]{2}/.test(t))return;
    let i0=-1,j0=-1;const tol=hgt*.5;
    /* smallest run of columns containing the text */
    outer:for(let len=1;len<=an.length;len++)for(let i=0;i+len<=an.length;i++){const L=left[i],R=right[i+len-1];if(g.x0>=L-tol&&g.x1<=R+tol){i0=i;j0=i+len-1;break outer}}
    if(i0<0){i0=nearestCol(g.x0,left);j0=i0}
    if(!slots[i0])return;
-   grid[i0+'|'+k]=t;cnt++;for(let j=i0+1;j<=j0;j++)grid[j+'|'+k]='cont'})});
+   grid[i0+'|'+k]=t;cnt++;{const rm=roomOf(raw);if(rm)rooms[i0+'|'+k]=rm}for(let j=i0+1;j<=j0;j++)grid[j+'|'+k]='cont'})});
  if(!cnt)return null;
  const canon={},names=[];const norm=s=>s.toLowerCase().replace(/[^a-z0-9]/g,'');
  Object.keys(grid).forEach(k=>{if(grid[k]==='cont')return;const nk=norm(grid[k]);if(!canon[nk]){canon[nk]=grid[k];names.push(grid[k])}grid[k]=canon[nk]});
  const keep=[];slots.forEach((s,i)=>{if(s&&Object.keys(grid).some(k=>+k.split('|')[0]===i))keep.push(i)});
  const outGrid=keep.map(i=>{const row={};Object.keys(grid).forEach(k=>{const [si,dow]=k.split('|');if(+si===i)row[dow]=grid[k]});return row});
- return{ok:true,subs:names,slots:keep.map(i=>slots[i]),grid:outGrid,orientation:'days-down',cells:cnt}}
+ const outRooms=keep.map(i=>{const row={};Object.keys(rooms).forEach(k=>{const [si,dow]=k.split('|');if(+si===i)row[dow]=rooms[k]});return row});
+ return{ok:true,subs:names,slots:keep.map(i=>slots[i]),grid:outGrid,rooms:outRooms,orientation:'days-down',cells:cnt}}
 function nearestCol(x,left){let bi=0,bd=1e9;left.forEach((l,i)=>{const d=Math.abs(l-x);if(d<bd){bd=d;bi=i}});return bi}
 function parseTimetable(words){
  const W=words.map(w=>({t:String(w.text||'').trim(),x0:w.bbox.x0,x1:w.bbox.x1,y0:w.bbox.y0,y1:w.bbox.y1,c:w.confidence==null?100:w.confidence})).filter(w=>w.t&&w.c>15);
@@ -4561,7 +4567,7 @@ function plan(r){const fills=[],skip=[];
    const ini=x=>String(x).split(/[\s.]+/).filter(Boolean).map(w=>w[0]).join('').toLowerCase(),pre=(a,b)=>{const A=String(a).toLowerCase().split(/[\s.]+/).filter(Boolean),B=String(b).toLowerCase().split(/[\s.]+/).filter(Boolean);return A.length>0&&A.length===B.length&&A.every((w,i)=>w.length>=2&&B[i].startsWith(w))};const base=String(name).replace(/\s+Lab$/i,'');
    const sub=S.subs.find(s=>nm(s.name)===nm(name))||S.subs.find(s=>nm(s.name)===nm(base))||S.subs.find(s=>pre(base,s.name))||S.subs.find(s=>base.length===2&&ini(s.name)===base.toLowerCase())||S.subs.find(s=>nm(name).length>2&&(nm(s.name).includes(nm(name))||nm(name).includes(nm(s.name))));
    if(!sub){skip.push(lab+': “'+name+'” is not one of your subjects');return}
-   fills.push({sid:slot.id,dw,val:sub.id,lab:lab+' → '+sub.name})})});
+   fills.push({sid:slot.id,dw,val:sub.id,room:((r.rooms||[])[i]||{})[dw]||'',lab:lab+' → '+sub.name+(((r.rooms||[])[i]||{})[dw]?' ('+r.rooms[i][dw]+')':'')})})});
  return{fills,skip}}
 window.ttPhoto=function(){const i=document.createElement('input');i.type='file';i.accept='image/*';
  i.onchange=async()=>{const f=i.files&&i.files[0];if(!f)return;
@@ -4578,14 +4584,14 @@ window.ttPhoto=function(){const i=document.createElement('input');i.type='file';
  i.click()};
 window.ttPhotoClose=close;
 window.ttPhotoApply=function(){const pl=window.__ttPlan;if(!pl)return close();
- pl.fills.forEach(x=>{S.grid[x.sid]=S.grid[x.sid]||{};if(!S.grid[x.sid][x.dw])S.grid[x.sid][x.dw]=x.val});
+ pl.fills.forEach(x=>{S.grid[x.sid]=S.grid[x.sid]||{};if(!S.grid[x.sid][x.dw]){S.grid[x.sid][x.dw]=x.val;if(x.room&&x.val!=='cont'){S.rooms=S.rooms||{};S.rooms[x.sid]=S.rooms[x.sid]||{};if(!S.rooms[x.sid][x.dw])S.rooms[x.sid][x.dw]=x.room}}});
  close();try{save();render()}catch(e){}if(window.toast)toast('Filled '+pl.fills.length+' period'+(pl.fills.length>1?'s':'')+' - please verify')};
 })();
 </script>
 <script>
 /* Automatic safety copy of all data kept on this device, taken whenever the app version changes. */
 (function(){
-const APP_VER='v152',KEY='apAutoBak',VK='apVer';
+const APP_VER='v156',KEY='apAutoBak',VK='apVer';
 function snap(){const o={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k===KEY||k===VK)continue;o[k]=localStorage.getItem(k)}return o}
 try{const prev=localStorage.getItem(VK);
  if(prev!==APP_VER){const d=snap();if(Object.keys(d).length){let a=[];try{a=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){a=[]}
@@ -4623,6 +4629,7 @@ function commitTT(){const d=O.d;ensureCustom();
   S.slots=d.slots.filter(x=>x.s&&x.e).map(x=>({id:x.id,s:x.s,e:x.e})).sort((a,b)=>a.s.localeCompare(b.s));
   const old=S.grid||{};S.grid={};
   S.slots.forEach((sl,i)=>{S.grid[sl.id]={};ORD.forEach(dw=>{const v=(d.grid[sl.id]||{})[dw];if(v==='cont'?i>0:S.subs.some(x=>x.id===v))S.grid[sl.id][dw]=v})});
+  if(d.rooms){S.rooms=S.rooms||{};S.slots.forEach(sl=>{const rr={};Object.keys(d.rooms[sl.id]||{}).forEach(dw=>{if(S.grid[sl.id][dw]&&S.grid[sl.id][dw]!=='cont')rr[dw]=d.rooms[sl.id][dw]});if(Object.keys(rr).length)S.rooms[sl.id]=rr})}
   if(S.rooms)Object.keys(S.rooms).forEach(k=>{if(!S.grid[k])delete S.rooms[k]});
   S.skip={};S.pv=5;save();render()}
 function commitHol(){const d=O.d;ensureCustom();
@@ -4665,14 +4672,14 @@ function applyTT(r){const d=O.d;const had=d.slots.length&&Object.keys(d.grid).so
   if(had&&!confirm('Replace your current timetable with the one read from the photo?'))return false;
   const idOf={};r.subs.forEach(n=>{let s=d.subs.find(x=>norm(x.name)===norm(n));if(!s){s={id:rid('sub_'),name:n,att:0,tot:0};d.subs.push(s)}idOf[n]=s.id});
   d.slots=r.slots.map(s=>({id:rid('n'),s:s.s,e:s.e}));d.grid={};
-  r.grid.forEach((row,i)=>{const sid=d.slots[i].id;d.grid[sid]={};Object.keys(row).forEach(dw=>{d.grid[sid][dw]=row[dw]==='cont'?'cont':idOf[row[dw]]})});return true}
+  d.rooms={};r.grid.forEach((row,i)=>{const sid=d.slots[i].id;d.grid[sid]={};d.rooms[sid]={};Object.keys(row).forEach(dw=>{d.grid[sid][dw]=row[dw]==='cont'?'cont':idOf[row[dw]];const rm=((r.rooms||[])[i]||{})[dw];if(rm)d.rooms[sid][dw]=rm})});return true}
 function applyHol(list){const d=O.d;let n=0;list.forEach(x=>{if(!d.hols.some(h=>h.from===x.from&&(h.to||h.from)===x.to)){d.hols.push({from:x.from,to:x.to,name:x.name});n++}});d.hols.sort((a,b)=>(a.from||'9').localeCompare(b.from||'9'));return n}
 async function runScan(kind,file){setScan(kind,'busy','Reading your photo… 0%');
   const onp=p=>{const el=document.getElementById('obScanMsg');if(el)el.textContent='Reading your photo… '+p+'%'};
   try{const data=await ocr(file,kind,onp);
     if(kind==='tt'){let r=ObScan.parseTimetable(data.words||[]),dbg=(data.words||[]).length;
       if(!r.ok){try{const d2=await ocr(file,kind,onp,true);const r2=ObScan.parseTimetable(d2.words||[]);if(r2.ok)r=r2;else{dbg+='/'+(d2.words||[]).length+' '+(r.why||'')+'/'+(r2.why||'')}}catch(e){}}
-      if(!r.ok||!applyTT(r)){setScan(kind,'err',r.ok?'Cancelled. Your timetable was not changed.':'Could not find a timetable in this photo. Use a straight, bright, cropped photo with day names and class timings visible, or fill it in by hand. (v152 · read '+dbg+' words)');return}
+      if(!r.ok||!applyTT(r)){setScan(kind,'err',r.ok?'Cancelled. Your timetable was not changed.':'Could not find a timetable in this photo. Use a straight, bright, cropped photo with day names and class timings visible, or fill it in by hand. (v155 · read '+dbg+' words)');return}
       O.day=1;setScan(kind,'ok',`✅ Read ${r.subs.length} subject${r.subs.length>1?'s':''} and ${r.slots.length} time slot${r.slots.length>1?'s':''}. Please verify the timetable (subjects, timings, every day) before continuing. Photo reading can make mistakes.`)}
     else{const list=ObScan.parseHolidays(data.text||'');const n=applyHol(list);
       if(!n){setScan(kind,'err','Could not find holiday dates in this photo. Use a clear, cropped photo of the list, or add the dates by hand.');return}
@@ -4681,7 +4688,6 @@ async function runScan(kind,file){setScan(kind,'busy','Reading your photo… 0%'
 function stepTT(){const d=O.d,sl=d.slots.slice().sort((a,b)=>(a.s||'').localeCompare(b.s||''));let h=`<h2>Your timetable</h2><p class="mu">Add your subjects, set your class timings, then choose the subject for every period. You can change all of this later.</p>`+scanBox('tt');
   h+=`<div class="ob-sec"><h3>1. Subjects</h3><div class="ob-add"><input id="obSub" placeholder="Subject name, e.g. DSA" onkeydown="if(event.key==='Enter'){ONBX.addSub()}"><button class="p" onclick="ONBX.addSub()">Add</button></div>`;
   h+=d.subs.length?`<div class="ob-chips">${d.subs.map(s=>`<span class="ob-chip">${E(s.name)}<b onclick="ONBX.delSub('${s.id}')">✕</b></span>`).join('')}</div>`:`<div class="ob-note">No subjects yet. Add a lab as its own subject, e.g. "DSA Lab".</div>`;
-  if(d.subs.length)h+=`<details><summary>Already have attendance numbers? (optional)</summary><div style="margin-top:10px">${d.subs.map(s=>`<div class="ob-row"><span class="nm" style="font-weight:600">${E(s.name)}</span><input class="ob-num" type="number" inputmode="numeric" min="0" value="${s.att||0}" onchange="ONBX.setSub('${s.id}','att',this.value)" aria-label="Attended"><span class="dash">/</span><input class="ob-num" type="number" inputmode="numeric" min="0" value="${s.tot||0}" onchange="ONBX.setSub('${s.id}','tot',this.value)" aria-label="Total"></div>`).join('')}<div class="ob-note">Attended / total classes held so far.</div></div></details>`;
   h+=`</div><div class="ob-sec"><h3>2. Class timings</h3>${sl.map(x=>`<div class="ob-row"><input type="time" value="${x.s||''}" onchange="ONBX.setSlot('${x.id}','s',this.value)"><span class="dash">to</span><input type="time" value="${x.e||''}" onchange="ONBX.setSlot('${x.id}','e',this.value)"><button class="ob-rm" onclick="ONBX.delSlot('${x.id}')" aria-label="Remove slot">✕</button></div>`).join('')||'<div class="ob-note">No time slots yet.</div>'}<button onclick="ONBX.addSlot()">+ Add time slot</button></div>`;
   h+=`<div class="ob-sec"><h3>3. Weekly grid</h3><div class="ob-days">${ORD.map(dw=>`<button class="${O.day===dw?'on':''}" onclick="ONBX.setDay(${dw})">${DN[dw]}</button>`).join('')}</div>`;
   h+=sl.length&&d.subs.length?sl.map((x,i)=>`<div class="ob-cell"><span>${t12(x.s)} – ${t12(x.e)}</span><select onchange="ONBX.setCell('${x.id}',${O.day},this.value)">${opts((d.grid[x.id]||{})[O.day]||'',i)}</select></div>`).join('')+`<button onclick="ONBX.copyDay()" style="margin-top:4px">Copy ${DN[O.day]} to all days</button><div class="ob-note">Leave a period on "free" if there is no class. For a 2-slot lab pick the subject in the first slot and "continues" in the next.</div>`:`<div class="ob-note">Add at least one subject and one time slot to fill the grid.</div>`;
@@ -4693,7 +4699,7 @@ function stepAsg(){const d=O.d,names=S.subs.map(x=>x.name);let h=`<h2>Assignment
   if(!names.length)return h+`<div class="ob-sec"><div class="ob-note">There are no subjects yet, so nothing to add. You can add them from the timetable later.</div></div>`;
   h+=`<div class="ob-sec"><h3>Add these subjects</h3>${names.map(n=>`<label class="ob-chk"><input type="checkbox" ${d.off.includes(n)?'':'checked'} onchange="ONBX.setOff('${E(n).replace(/'/g,"&#39;")}',!this.checked)"> ${E(n)}</label>`).join('')}</div>`;
   return h+`<div class="ob-sec"><label class="ob-chk"><input type="checkbox" ${d.asg?'checked':''} onchange="ONBX.setAsg(this.checked)"> Keep Assignments in sync when I edit the timetable</label></div>`}
-function stepWelcome(){return`<div class="ob-hero"><div class="em">📅</div><h1>Welcome!</h1><p class="mu">Let's set up your planner. Tap the card to begin. Every card can be skipped.</p></div><ul class="ob-list"><li><i>1</i><span><b>Timetable</b></span></li><li><i>2</i><span><b>Any extra class?</b></span></li><li><i>3</i><span><b>Holidays</b></span></li><li><i>4</i><span><b>Attendance target</b></span></li><li><i>5</i><span><b>Assignments</b></span></li><li><i>6</i><span><b>Theme</b></span></li></ul><div class="ob-tap">Tap anywhere on this card ›</div>`}
+function stepWelcome(){return`<div class="ob-hero"><div class="em">📅</div><h1>Welcome!</h1><p class="mu">Let's set up your planner. Tap the card to begin. Every card can be skipped.</p></div><ul class="ob-list"><li><i>1</i><span><b>Timetable</b></span></li><li><i>2</i><span><b>Any extra class?</b></span></li><li><i>3</i><span><b>Holidays</b></span></li><li><i>4</i><span><b>Attendance target</b></span></li><li><i>5</i><span><b>Classes so far</b></span></li><li><i>6</i><span><b>Assignments</b></span></li><li><i>7</i><span><b>Theme</b></span></li></ul><div class="ob-tap">Tap anywhere on this card ›</div>`}
 const DOWS=()=>ORD.map(dw=>`<option value="${dw}">${DN[dw]}</option>`).join('');
 function stepExtra(){const d=O.d;let h=`<h2>Any extra class?</h2><p class="mu">An extra or remedial class outside your normal timetable. Pick the day, then choose the subject in the period it happens.</p><div class="ob-yn"><button class="${d.xyes?'':'on'}" onclick="ONBX.setXyes(false)">No</button><button class="${d.xyes?'on':''}" onclick="ONBX.setXyes(true)">Yes</button></div>`;
   if(!d.xyes)return h+`<div class="ob-note">Nothing extra. You can add one later by editing the timetable.</div>`;
@@ -4708,13 +4714,19 @@ function stepExtra(){const d=O.d;let h=`<h2>Any extra class?</h2><p class="mu">A
   h+=oth.map(({x,i})=>`<div class="ob-sec" style="margin-top:8px"><div class="ob-row"><input type="time" value="${x.s||''}" onchange="ONBX.setX(${i},'s',this.value)"><span class="dash">to</span><input type="time" value="${x.e||''}" onchange="ONBX.setX(${i},'e',this.value)"><button class="ob-rm" onclick="ONBX.delX(${i})" aria-label="Remove">✕</button></div><select style="width:100%" onchange="ONBX.setX(${i},'sub',this.value)"><option value="">Subject…</option>${d.subs.filter(s=>s.name.trim()).map(s=>`<option value="${s.id}"${x.sub===s.id?' selected':''}>${E(s.name)}</option>`).join('')}</select></div>`).join('');
   return h+`<button onclick="ONBX.addX()" style="margin-top:6px">+ Extra class at a different time (${DN[dw]})</button><div class="ob-note">Days marked • have an extra class. Periods that already have a class are locked.</div>`}
 function stepTarget(){const t=+O.d.target||75;return`<h2>Attendance target</h2><p class="mu">What percentage do you need? All bunk and attend calculations will follow this.</p><div class="ob-sats ob-tg">${[65,70,75,80,85,90].map(n=>`<button class="${t===n?'on':''}" onclick="ONBX.setTarget(${n})">${n}%</button>`).join('')}</div><div class="ob-sec" style="margin-top:12px"><h3>Other value</h3><div class="ob-row"><input type="number" inputmode="numeric" min="1" max="100" value="${t}" onchange="ONBX.setTarget(this.value,1)" style="flex:1"><span class="dash">%</span></div></div>`}
+function stepAtt(){const d=O.d,m=d.attMode||'new';let h=`<h2>Your attendance</h2><p class="mu">Starting fresh, or already some classes done this semester?</p><div class="ob-sats ob-am"><button class="${m==='new'?'on':''}" onclick="ONBX.setAttMode('new')">Start a new semester</button><button class="${m==='now'?'on':''}" onclick="ONBX.setAttMode('now')">Enter my present classes</button></div>`;
+  if(m==='new')h+=`<div class="ob-note" style="margin-top:12px">Every subject starts at 0 / 0. Your attendance will be counted from today.</div>`;
+  else h+=`<div class="ob-sec" style="margin-top:12px"><h3>Attended / total so far</h3>${d.subs.length?d.subs.map(s=>`<div class="ob-row"><span class="nm" style="font-weight:600">${E(s.name)}</span><input class="ob-num" type="number" inputmode="numeric" min="0" value="${s.att||0}" onchange="ONBX.setSub('${s.id}','att',this.value)" aria-label="Attended"><span class="dash">/</span><input class="ob-num" type="number" inputmode="numeric" min="0" value="${s.tot||0}" onchange="ONBX.setSub('${s.id}','tot',this.value)" aria-label="Total"></div>`).join(''):'<div class="ob-note">Add subjects in the timetable step first.</div>'}<div class="ob-note">Attended classes can not be more than total classes held.</div></div>`;
+  return h}
+function commitAtt(){const d=O.d;ensureCustom();const zero=(d.attMode||'new')==='new';
+  S.subs.forEach(s=>{const x=d.subs.find(q=>q.id===s.id)||{};if(zero){s.att=0;s.tot=0}else{s.att=Math.max(0,+x.att||0);s.tot=Math.max(s.att,+x.tot||0)}});save();render()}
 function stepTheme(){const seen={},L=PALS.filter(p=>seen[p[0]]?0:(seen[p[0]]=1));const cur=S.pal||'teal';
   return`<h2>Pick a theme</h2><p class="mu">Tap a colour set. You can change it any time from the palette button.</p><div class="ob-pals">${L.map(([k,n,g])=>`<button class="${cur===k?'on':''}" onclick="ONBX.setPalX('${k}')"><i style="background:${g}"></i>${n}</button>`).join('')}</div>`}
-const LAST=()=>6;
-const STEPS=[stepWelcome,stepTT,stepExtra,stepHol,stepTarget,stepAsg,stepTheme];
+const LAST=()=>7;
+const STEPS=[stepWelcome,stepTT,stepExtra,stepHol,stepTarget,stepAtt,stepAsg,stepTheme];
 let busy=false;
 function cardHTML(st){const first=st===0,last=st===LAST();
-  const dots=[1,2,3,4,5,6].map(i=>`<i class="${st>=i?'on':''}"></i>`).join('');
+  const dots=[1,2,3,4,5,6,7].map(i=>`<i class="${st>=i?'on':''}"></i>`).join('');
   let foot;
   if(first)foot=`<button class="ob-skip" onclick="event.stopPropagation();ONBX.skipAll()">Skip setup</button><button class="p" onclick="event.stopPropagation();ONBX.next()">Start</button>`;
   else foot=`${st>(O.edit?1:0)?`<button onclick="ONBX.back()">Back</button>`:''}<button class="ob-skip" onclick="ONBX.skip()">Skip</button><button class="p" onclick="ONBX.next()">${last?(O.edit?'Save':'Finish'):'Next'}</button>`;
@@ -4722,7 +4734,7 @@ function cardHTML(st){const first=st===0,last=st===LAST();
 function draw(anim){const r=root(),st=O.step;
   let c=r.querySelector('.ob-card.cur');const sc=c&&c.querySelector('.ob-body')?c.querySelector('.ob-body').scrollTop:0;
   const left=Math.min(2,LAST()-st);
-  r.innerHTML=`<div class="ob-stage">${left>=2?'<div class="ob-card b2"></div>':''}${left>=1?'<div class="ob-card b1"></div>':''}<div class="ob-card cur${anim?' in':''}">${cardHTML(st)}</div></div>`;
+  r.innerHTML=`<div class="ob-stage"><div class="ob-side sL">ATTENDANCE</div><div class="ob-side sR">ASSIGNMENT</div><div class="ob-card cur${anim?' in':''}">${cardHTML(st)}</div></div>`;
   c=r.querySelector('.ob-card.cur');if(st===0)c.classList.add('tap');
   c.querySelector('.ob-body').scrollTop=sc;
   if(st===0)c.onclick=e=>{if(!e.target.closest('button'))X.next()}}
@@ -4744,6 +4756,7 @@ const X=window.ONBX={
   setDay(d){O.day=d;draw()},
   setCell(sid,dw,v){O.d.grid[sid]=O.d.grid[sid]||{};if(v)O.d.grid[sid][dw]=v;else delete O.d.grid[sid][dw]},
   copyDay(){O.d.slots.forEach(x=>{const v=(O.d.grid[x.id]||{})[O.day];ORD.forEach(dw=>{if(dw===O.day)return;O.d.grid[x.id]=O.d.grid[x.id]||{};if(v)O.d.grid[x.id][dw]=v;else delete O.d.grid[x.id][dw]})});toast2('Copied to all days')},
+  setAttMode(m){O.d.attMode=m;draw()},
   setTarget(v,keep){O.d.target=Math.min(100,Math.max(1,parseInt(v)||75));if(!keep||true)draw()},
   toggleSat(n){const a=O.d.sat,i=a.indexOf(n);if(i>=0)a.splice(i,1);else a.push(n);draw()},
   addHol(){O.d.hols.push({from:'',to:'',name:''});draw()},
@@ -4759,14 +4772,14 @@ const X=window.ONBX={
   setX(i,k,v){O.d.xtra[i][k]=k==='dow'?+v:v;if(k==='slot')draw()},
   setPalX(k){setPal(k);draw()},
   next(){const st=O.step;if(busy)return;
-    if(st===1)commitTT();else if(st===2)commitExtra();else if(st===3)commitHol();else if(st===4)commitTarget();else if(st===5)commitAsg();
+    if(st===1)commitTT();else if(st===2)commitExtra();else if(st===3)commitHol();else if(st===4)commitTarget();else if(st===5)commitAtt();else if(st===6)commitAsg();
     if(st===LAST()){swipe(finish,1);return}
-    swipe(()=>{O.step=st+1;draw(true)},-1)},
-  back(){if(busy)return;if(O.step>(O.edit?1:0)){swipe(()=>{O.step--;draw(true)},1)}},
+    swipe(()=>{O.step=st+1+(O.edit&&st===4?1:0);draw(true)},-1)},
+  back(){if(busy)return;if(O.step>(O.edit?1:0)){swipe(()=>{O.step--;if(O.edit&&O.step===5)O.step=4;draw(true)},1)}},
   skip(){const st=O.step;if(busy)return;
-    if(st===5&&!O.edit){ensureCustom();S.asgAuto=0;save();if(window.asgSyncFromTT)window.asgSyncFromTT(true)}
+    if(st===6&&!O.edit){ensureCustom();S.asgAuto=0;save();if(window.asgSyncFromTT)window.asgSyncFromTT(true)}
     if(st===LAST()){swipe(finish,-1);return}
-    swipe(()=>{O.step=st+1;draw(true)},-1)},
+    swipe(()=>{O.step=st+1+(O.edit&&st===4?1:0);draw(true)},-1)},
   skipAll(){ensureCustom();S.asgAuto=0;save();if(window.asgSyncFromTT)window.asgSyncFromTT(true);swipe(finish,-1)},
   close(){close()},
   open(e){open(e)}
