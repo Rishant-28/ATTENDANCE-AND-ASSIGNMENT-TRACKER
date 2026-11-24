@@ -4658,7 +4658,7 @@ async function prepImg(file,kind){const bm=await createImageBitmap(file);const m
    const R=Math.max(1,Math.round(k*.7));for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(rem[y*W+x]){for(let dy=-R;dy<=R;dy++)for(let dx=-R;dx<=R;dx++){const yy=y+dy,xx=x+dx;if(yy>=0&&yy<H&&xx>=0&&xx<W&&!rem[yy*W+xx])G[yy*W+xx]=255}}
    for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(rem[y*W+x])G[y*W+x]=255}
   for(let i=0,j=0;i<a.length;i+=4,j++){a[i]=a[i+1]=a[i+2]=G[j]}c.putImageData(d,0,0);return cv}
-async function ocr(file,kind,onp){await loadT();const cv=await prepImg(file,kind);const modes=kind==='tt'?['6','12']:['6'];let pi=0;const w=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.status==='recognizing text')onp(Math.round((pi+m.progress)/modes.length*100))}});
+async function ocr(file,kind,onp,plain){await loadT();const cv=await prepImg(file,plain?'plain':kind);const modes=plain?['11','6']:kind==='tt'?['6','12']:['6'];let pi=0;const w=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.status==='recognizing text')onp(Math.round((pi+m.progress)/modes.length*100))}});
   try{let words=[],text='';for(pi=0;pi<modes.length;pi++){await w.setParameters({tessedit_pageseg_mode:modes[pi],preserve_interword_spaces:'1'});const r=await w.recognize(cv);words=words.concat(r.data.words||[]);text+=(r.data.text||'')+'\n'}return{words,text}}finally{try{await w.terminate()}catch(e){}}}
 function setScan(kind,state,msg){O.scan={kind,state,msg};draw()}
 function applyTT(r){const d=O.d;const had=d.slots.length&&Object.keys(d.grid).some(k=>Object.keys(d.grid[k]||{}).length);
@@ -4670,8 +4670,9 @@ function applyHol(list){const d=O.d;let n=0;list.forEach(x=>{if(!d.hols.some(h=>
 async function runScan(kind,file){setScan(kind,'busy','Reading your photo… 0%');
   const onp=p=>{const el=document.getElementById('obScanMsg');if(el)el.textContent='Reading your photo… '+p+'%'};
   try{const data=await ocr(file,kind,onp);
-    if(kind==='tt'){const r=ObScan.parseTimetable(data.words||[]);
-      if(!r.ok||!applyTT(r)){setScan(kind,'err',r.ok?'Cancelled. Your timetable was not changed.':'Could not find a timetable in this photo. Use a straight, bright, cropped photo with day names and class timings visible, or fill it in by hand.');return}
+    if(kind==='tt'){let r=ObScan.parseTimetable(data.words||[]),dbg=(data.words||[]).length;
+      if(!r.ok){try{const d2=await ocr(file,kind,onp,true);const r2=ObScan.parseTimetable(d2.words||[]);if(r2.ok)r=r2;else{dbg+='/'+(d2.words||[]).length+' '+(r.why||'')+'/'+(r2.why||'')}}catch(e){}}
+      if(!r.ok||!applyTT(r)){setScan(kind,'err',r.ok?'Cancelled. Your timetable was not changed.':'Could not find a timetable in this photo. Use a straight, bright, cropped photo with day names and class timings visible, or fill it in by hand. (v152 · read '+dbg+' words)');return}
       O.day=1;setScan(kind,'ok',`✅ Read ${r.subs.length} subject${r.subs.length>1?'s':''} and ${r.slots.length} time slot${r.slots.length>1?'s':''}. Please verify the timetable (subjects, timings, every day) before continuing. Photo reading can make mistakes.`)}
     else{const list=ObScan.parseHolidays(data.text||'');const n=applyHol(list);
       if(!n){setScan(kind,'err','Could not find holiday dates in this photo. Use a clear, cropped photo of the list, or add the dates by hand.');return}
