@@ -1473,7 +1473,7 @@ html[data-theme=dark] #onb .ob-warn.bad{background:#3d1414;color:#ffc9c9;border-
 <div class="row"><input class="nm" id="newSub" placeholder="New subject (e.g. DSA)"><button class="p" onclick="addSub()">+ Add</button></div>
 <div class="mu">Attended = classes you attended, Total = classes held so far.</div></div></div>
 <div class="card" id="onbCard"><h2>Setup</h2><div class="mu" style="margin-bottom:8px">Change your subjects, class timings, weekly timetable and holidays step by step. Your attendance numbers stay as they are.</div><div class="row"><button class="p" onclick="onbOpen(true)">✏️ Edit timetable &amp; holidays</button><button onclick="asgSyncFromTT('manual');S.asgAuto=1;save();toast&&toast('Assignments updated')">↻ Sync Assignments</button></div><div class="row" style="margin-top:8px"><button onclick="onbOpen(true,1,'tt')">📷 Timetable from photo</button><button onclick="onbOpen(true,3,'hol')">📷 Holidays from photo</button></div><div class="mu" style="margin-top:6px;font-size:12px">Photo reading can make mistakes. You will be asked to verify before anything is saved.</div></div>
-<div class="card"><h2>Backup</h2><div class="mu" style="margin-bottom:8px">Saves your attendance, timetable, holidays and daily records to a file. Assignments and marks are not included.</div><div class="row"><button class="p" onclick="exportData()">⬇ Download backup</button><button onclick="$('impF').click()">Restore from file</button><input type="file" id="impF" accept=".json,application/json" style="display:none" onchange="importData(this)"></div><div class="mu" id="bkMsg"></div></div>
+<div class="card"><h2>Backup</h2><div class="mu" style="margin-bottom:8px">Saves your attendance, timetable, holidays and daily records to a file. Assignments and marks are not included.</div><div class="row"><button class="p" onclick="exportData()">⬇ Download backup</button><button onclick="$('impF').click()">Restore from file</button><input type="file" id="impF" accept=".json,application/json" style="display:none" onchange="importData(this)"></div><div class="row" style="margin-top:8px"><button onclick="abList()">🕘 Restore an automatic backup</button></div><div class="mu" id="abBox" style="margin-top:6px;font-size:12px">A copy of all your data on this device is saved automatically whenever the app is updated.</div><div class="mu" id="bkMsg"></div></div>
 </section>
 </main>
 <div id="calcPage" class="asgpage" style="display:none"><div class="asgbar"><button class="backb" onclick="closeCalc()">← Back</button><b>Calculator</b></div><div class="asgscroll"><div class="card" id="calcCard" style="margin-top:4px"><h2>Calculator</h2>
@@ -4430,9 +4430,62 @@ const BREAK=/^(lunch|break|recess|interval|lunch break|short break)$/i;
 const med=a=>{const s=a.slice().sort((x,y)=>x-y);return s.length?s[Math.floor(s.length/2)]:0};
 const sd=a=>{const m=a.reduce((x,y)=>x+y,0)/a.length;return Math.sqrt(a.reduce((x,y)=>x+(y-m)*(y-m),0)/a.length)};
 function hh(h){h=+h;if(h<7)h+=12;return h}
+
+/* ---- grid reader: header with "Lecture n (8.00-8.50)" columns, days down the left ---- */
+function cellName(t){t=clean(t.replace(/\(.*$/,' '));
+ t=t.replace(/[\s-]*\b[A-Z]{2,4}[\s-]*\d{2,3}[A-Z]?\s*$/,'').replace(/[\s-]*\b\d{3}\s*$/,'');
+ t=t.replace(/-[A-Z]\b/g,'').replace(/-(NYB|VIB|[A-Z]{3})\b/g,'').replace(/\s+/g,' ').trim();
+ t=t.replace(/\s+(lab|practical)\b/i,' Lab').replace(/\bLAB\b/,'Lab');
+ return t.length>28?t.slice(0,28).trim():t}
+function parseGrid(W,hgt){
+ const AN=/^[|\[\]!]?(lecture|lec|period|class|slot)\.?$/i;
+ let an=W.filter(w=>AN.test(w.t));if(an.length<3)return null;
+ /* keep the most common header line */
+ const ly=an.map(a=>Math.round(a.cy/(hgt*1.5)));const mode=ly.sort((a,b)=>ly.filter(v=>v===b).length-ly.filter(v=>v===a).length)[0];
+ an=an.filter(a=>Math.round(a.cy/(hgt*1.5))===mode).sort((a,b)=>a.x0-b.x0);if(an.length<3)return null;
+ const hy=med(an.map(a=>a.cy));
+ const left=an.map(a=>a.x0-5),right=left.slice(1).concat([Math.max(...W.map(w=>w.x1))+10]);
+ const hdrBottom=hy+hgt*3.2;const hdrWords=new Set(an);const slots=[];
+ an.forEach((a,i)=>{const ws=W.filter(w=>w!==a&&w.cx>=left[i]&&w.cx<right[i]&&w.cy>=hy-hgt&&w.cy<=hdrBottom&&w.cy<hy+hgt*3.2);
+  ws.forEach(w=>hdrWords.add(w));const txt=ws.sort((p,q)=>Math.abs(p.cy-q.cy)>hgt*.6?p.cy-q.cy:p.x0-q.x0).map(w=>w.t).join(' ');
+  const t=[];let m;const re=/(\d{1,2})\s*[:.]\s*(\d{2})/g;while((m=re.exec(txt)))if(+m[1]>=1&&+m[1]<=23&&+m[2]<60)t.push({h:hh(m[1]),m:+m[2]});
+  slots.push(t.length>=2?{s:P2(t[0].h)+':'+P2(t[0].m),e:P2(t[1].h)+':'+P2(t[1].m)}:null)});
+ if(slots.filter(Boolean).length<2)return null;
+ const firstL=left[0];
+ const dl=[];W.forEach(w=>{if(w.cx>=firstL||w.cy<hdrBottom)return;const t=w.t.replace(/[^A-Za-z.]/g,'');if(DAYRE.test(t)){const k=DOWN[t.slice(0,3).toLowerCase()];if(k&&!dl.some(d=>d.k===k)){dl.push({k,cy:w.cy,w})}}});
+ if(dl.length<2)return null;
+ /* y = a + b*(dow-1) */
+ const n=dl.length,sx=dl.reduce((x,d)=>x+d.k,0),sy=dl.reduce((x,d)=>x+d.cy,0),sxx=dl.reduce((x,d)=>x+d.k*d.k,0),sxy=dl.reduce((x,d)=>x+d.k*d.cy,0);
+ const b=(n*sxy-sx*sy)/(n*sxx-sx*sx);if(!(b>hgt*1.2))return null;const a0=(sy-b*sx)/n;
+ const rowY=k=>a0+b*k;
+ const lab=new Set(dl.map(d=>d.w));
+ /* cell words -> row */
+ const byRow={};
+ W.forEach(w=>{if(hdrWords.has(w)||lab.has(w)||w.cx<firstL||w.cy<hdrBottom-hgt*.5)return;if(/^[\W_]+$/.test(w.t))return;
+  const k=Math.round((w.cy-a0)/b);if(k<1||k>6||Math.abs(w.cy-rowY(k))>b*.55)return;(byRow[k]=byRow[k]||[]).push(w)});
+ const grid={};let cnt=0;
+ Object.keys(byRow).forEach(k=>{const ws=byRow[k].sort((p,q)=>p.x0-q.x0);const groups=[];
+  ws.forEach(w=>{const g=groups[groups.length-1];if(g&&w.x0-g.x1<hgt*2.6){g.ws.push(w);g.x1=Math.max(g.x1,w.x1)}else groups.push({ws:[w],x0:w.x0,x1:w.x1})});
+  groups.forEach(g=>{const t=cellName(g.ws.sort((p,q)=>Math.abs(p.cy-q.cy)>hgt*.7?p.cy-q.cy:p.x0-q.x0).map(w=>w.t).join(' '));
+   if(t.length<2||BREAK.test(t)||/^[\d\s.\-/]+$/.test(t)||!/[A-Za-z]{2}/.test(t))return;
+   let i0=-1,j0=-1;const tol=hgt*.5;
+   /* smallest run of columns containing the text */
+   outer:for(let len=1;len<=an.length;len++)for(let i=0;i+len<=an.length;i++){const L=left[i],R=right[i+len-1];if(g.x0>=L-tol&&g.x1<=R+tol){i0=i;j0=i+len-1;break outer}}
+   if(i0<0){i0=nearestCol(g.x0,left);j0=i0}
+   if(!slots[i0])return;
+   grid[i0+'|'+k]=t;cnt++;for(let j=i0+1;j<=j0;j++)grid[j+'|'+k]='cont'})});
+ if(!cnt)return null;
+ const canon={},names=[];const norm=s=>s.toLowerCase().replace(/[^a-z0-9]/g,'');
+ Object.keys(grid).forEach(k=>{if(grid[k]==='cont')return;const nk=norm(grid[k]);if(!canon[nk]){canon[nk]=grid[k];names.push(grid[k])}grid[k]=canon[nk]});
+ const keep=[];slots.forEach((s,i)=>{if(s&&Object.keys(grid).some(k=>+k.split('|')[0]===i))keep.push(i)});
+ const outGrid=keep.map(i=>{const row={};Object.keys(grid).forEach(k=>{const [si,dow]=k.split('|');if(+si===i)row[dow]=grid[k]});return row});
+ return{ok:true,subs:names,slots:keep.map(i=>slots[i]),grid:outGrid,orientation:'days-down',cells:cnt}}
+function nearestCol(x,left){let bi=0,bd=1e9;left.forEach((l,i)=>{const d=Math.abs(l-x);if(d<bd){bd=d;bi=i}});return bi}
 function parseTimetable(words){
  const W=words.map(w=>({t:String(w.text||'').trim(),x0:w.bbox.x0,x1:w.bbox.x1,y0:w.bbox.y0,y1:w.bbox.y1,c:w.confidence==null?100:w.confidence})).filter(w=>w.t&&w.c>15);
  W.forEach(w=>{w.cx=(w.x0+w.x1)/2;w.cy=(w.y0+w.y1)/2});
+ {const D=[];W.sort((p,q)=>q.c-p.c).forEach(w=>{if(!D.some(v=>{const ix=Math.min(v.x1,w.x1)-Math.max(v.x0,w.x0),iy=Math.min(v.y1,w.y1)-Math.max(v.y0,w.y0);if(ix<=0||iy<=0)return false;return ix*iy>.4*Math.min((v.x1-v.x0)*(v.y1-v.y0),(w.x1-w.x0)*(w.y1-w.y0))}))D.push(w)});W.length=0;D.forEach(w=>W.push(w))}
+ const g=parseGrid(W,med(W.map(w=>w.y1-w.y0))||18);if(g)return g;
  const days=[];W.forEach(w=>{const t=w.t.replace(/[^A-Za-z.]/g,'');if(DAYRE.test(t)){const k=DOWN[t.slice(0,3).toLowerCase()];if(k&&!days.some(d=>d.dow===k))days.push({dow:k,cx:w.cx,cy:w.cy,w})}});
  if(days.length<3)return{ok:false,why:'days'};
  const rowsMode=sd(days.map(d=>d.cy))>sd(days.map(d=>d.cx));   /* days listed top to bottom */
@@ -4505,7 +4558,8 @@ function plan(r){const fills=[],skip=[];
    if(!slot){skip.push(lab+': no period at this time in your timetable');return}
    const cur=(S.grid[slot.id]||{})[dw];if(cur){return}
    if(name==='cont'){fills.push({sid:slot.id,dw,val:'cont',lab:lab+' → lab continues'});return}
-   const sub=S.subs.find(s=>nm(s.name)===nm(name))||S.subs.find(s=>nm(name).length>2&&(nm(s.name).includes(nm(name))||nm(name).includes(nm(s.name))));
+   const ini=x=>String(x).split(/[\s.]+/).filter(Boolean).map(w=>w[0]).join('').toLowerCase(),pre=(a,b)=>{const A=String(a).toLowerCase().split(/[\s.]+/).filter(Boolean),B=String(b).toLowerCase().split(/[\s.]+/).filter(Boolean);return A.length>0&&A.length===B.length&&A.every((w,i)=>w.length>=2&&B[i].startsWith(w))};const base=String(name).replace(/\s+Lab$/i,'');
+   const sub=S.subs.find(s=>nm(s.name)===nm(name))||S.subs.find(s=>nm(s.name)===nm(base))||S.subs.find(s=>pre(base,s.name))||S.subs.find(s=>base.length===2&&ini(s.name)===base.toLowerCase())||S.subs.find(s=>nm(name).length>2&&(nm(s.name).includes(nm(name))||nm(name).includes(nm(s.name))));
    if(!sub){skip.push(lab+': “'+name+'” is not one of your subjects');return}
    fills.push({sid:slot.id,dw,val:sub.id,lab:lab+' → '+sub.name})})});
  return{fills,skip}}
@@ -4526,6 +4580,24 @@ window.ttPhotoClose=close;
 window.ttPhotoApply=function(){const pl=window.__ttPlan;if(!pl)return close();
  pl.fills.forEach(x=>{S.grid[x.sid]=S.grid[x.sid]||{};if(!S.grid[x.sid][x.dw])S.grid[x.sid][x.dw]=x.val});
  close();try{save();render()}catch(e){}if(window.toast)toast('Filled '+pl.fills.length+' period'+(pl.fills.length>1?'s':'')+' - please verify')};
+})();
+</script>
+<script>
+/* Automatic safety copy of all data kept on this device, taken whenever the app version changes. */
+(function(){
+const APP_VER='v152',KEY='apAutoBak',VK='apVer';
+function snap(){const o={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k===KEY||k===VK)continue;o[k]=localStorage.getItem(k)}return o}
+try{const prev=localStorage.getItem(VK);
+ if(prev!==APP_VER){const d=snap();if(Object.keys(d).length){let a=[];try{a=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){a=[]}
+   if(!a.length||JSON.stringify(a[0].data)!==JSON.stringify(d)){a.unshift({ts:Date.now(),from:prev||'first run',data:d});a=a.slice(0,3);
+    try{localStorage.setItem(KEY,JSON.stringify(a))}catch(e){try{localStorage.setItem(KEY,JSON.stringify(a.slice(0,1)))}catch(e2){}}}}
+  localStorage.setItem(VK,APP_VER)}}catch(e){}
+window.abList=function(){const b=document.getElementById('abBox');let a=[];try{a=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){}
+ if(!a.length){b.textContent='No automatic backup yet. One is saved the next time the app is updated.';return}
+ b.innerHTML=a.map((x,i)=>'<div style="display:flex;gap:8px;align-items:center;margin:6px 0"><span style="flex:1">'+new Date(x.ts).toLocaleString()+' (before '+APP_VER+')</span><button onclick="abRestore('+i+')">Restore</button></div>').join('')+'<div>Restoring replaces the data on this device with that copy.</div>'};
+window.abRestore=function(i){let a=[];try{a=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){}const x=a[i];if(!x)return;
+ if(!confirm('Replace your current data with the backup from '+new Date(x.ts).toLocaleString()+'?'))return;
+ try{Object.keys(x.data).forEach(k=>localStorage.setItem(k,x.data[k]));location.reload()}catch(e){alert('Could not restore: '+e.message)}};
 })();
 </script>
 <div id="onb"></div>
@@ -4575,11 +4647,19 @@ function scanBox(kind){const v=O.scan;let b='';
   if(v&&v.kind===kind){b=`<div class="ob-warn ${v.state==='busy'?'busy':v.state==='err'?'bad':''}"><span id="obScanMsg">${E(v.msg)}</span></div>`}
   return`<div class="ob-scan"><button class="ob-photo" onclick="ONBX.pick('${kind}')"${v&&v.state==='busy'?' disabled':''}>📷 ${kind==='tt'?'Fill timetable from a photo':'Fill holidays from a photo'}</button>${b||`<div class="ob-note">${SC_NOTE}</div>`}</div>`}
 function loadT(){return window.Tesseract?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';s.onload=res;s.onerror=()=>rej(new Error('reader'));document.head.appendChild(s)})}
-async function prepImg(file){const bm=await createImageBitmap(file);const m=Math.max(bm.width,bm.height);const k=Math.min(3,Math.max(1,2000/m),2600/m);const cv=document.createElement('canvas');cv.width=Math.round(bm.width*k);cv.height=Math.round(bm.height*k);const c=cv.getContext('2d');c.drawImage(bm,0,0,cv.width,cv.height);
-  const d=c.getImageData(0,0,cv.width,cv.height),a=d.data;let lo=255,hi=0;for(let i=0;i<a.length;i+=4){const g=.3*a[i]+.59*a[i+1]+.11*a[i+2];a[i]=a[i+1]=a[i+2]=g;if(g<lo)lo=g;if(g>hi)hi=g}
-  const sc=hi>lo?255/(hi-lo):1;for(let i=0;i<a.length;i+=4){const g=Math.max(0,Math.min(255,(a[i]-lo)*sc));a[i]=a[i+1]=a[i+2]=g}c.putImageData(d,0,0);return cv}
-async function ocr(file,kind,onp){await loadT();const cv=await prepImg(file);const w=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.status==='recognizing text')onp(Math.round(m.progress*100))}});
-  try{await w.setParameters({tessedit_pageseg_mode:kind==='tt'?'11':'6',preserve_interword_spaces:'1'});const r=await w.recognize(cv);return r.data}finally{try{await w.terminate()}catch(e){}}}
+async function prepImg(file,kind){const bm=await createImageBitmap(file);const m=Math.max(bm.width,bm.height);const k=Math.min(3,Math.max(1,2000/m),2600/m);const cv=document.createElement('canvas');cv.width=Math.round(bm.width*k);cv.height=Math.round(bm.height*k);const c=cv.getContext('2d');c.drawImage(bm,0,0,cv.width,cv.height);
+  const W=cv.width,H=cv.height,d=c.getImageData(0,0,W,H),a=d.data,tt=kind==='tt';let lo=255,hi=0;
+  for(let i=0;i<a.length;i+=4){const g=tt?a[i]:.3*a[i]+.59*a[i+1]+.11*a[i+2];a[i]=g;if(g<lo)lo=g;if(g>hi)hi=g}   /* timetable: red channel keeps text visible on red cells */
+  const sc=hi>lo?255/(hi-lo):1;const G=new Uint8Array(W*H);for(let i=0,j=0;i<a.length;i+=4,j++)G[j]=Math.max(0,Math.min(255,(a[i]-lo)*sc));
+  if(tt){/* erase long table lines so they do not break the words */
+   const rem=new Uint8Array(W*H),hm=Math.max(30*k,.03*W/k*k*0+0.03*W),vm=Math.max(30*k,.05*H);
+   for(let y=0;y<H;y++){let run=0;for(let x=0;x<=W;x++){if(x<W&&G[y*W+x]<140)run++;else{if(run>=hm)for(let q=x-run;q<x;q++)rem[y*W+q]=1;run=0}}}
+   for(let x=0;x<W;x++){let run=0;for(let y=0;y<=H;y++){if(y<H&&G[y*W+x]<140)run++;else{if(run>=vm)for(let q=y-run;q<y;q++)rem[q*W+x]=1;run=0}}}
+   const R=Math.max(1,Math.round(k*.7));for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(rem[y*W+x]){for(let dy=-R;dy<=R;dy++)for(let dx=-R;dx<=R;dx++){const yy=y+dy,xx=x+dx;if(yy>=0&&yy<H&&xx>=0&&xx<W&&!rem[yy*W+xx])G[yy*W+xx]=255}}
+   for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(rem[y*W+x])G[y*W+x]=255}
+  for(let i=0,j=0;i<a.length;i+=4,j++){a[i]=a[i+1]=a[i+2]=G[j]}c.putImageData(d,0,0);return cv}
+async function ocr(file,kind,onp){await loadT();const cv=await prepImg(file,kind);const modes=kind==='tt'?['6','12']:['6'];let pi=0;const w=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.status==='recognizing text')onp(Math.round((pi+m.progress)/modes.length*100))}});
+  try{let words=[],text='';for(pi=0;pi<modes.length;pi++){await w.setParameters({tessedit_pageseg_mode:modes[pi],preserve_interword_spaces:'1'});const r=await w.recognize(cv);words=words.concat(r.data.words||[]);text+=(r.data.text||'')+'\n'}return{words,text}}finally{try{await w.terminate()}catch(e){}}}
 function setScan(kind,state,msg){O.scan={kind,state,msg};draw()}
 function applyTT(r){const d=O.d;const had=d.slots.length&&Object.keys(d.grid).some(k=>Object.keys(d.grid[k]||{}).length);
   if(had&&!confirm('Replace your current timetable with the one read from the photo?'))return false;
