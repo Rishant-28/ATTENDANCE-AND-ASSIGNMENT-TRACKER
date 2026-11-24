@@ -1309,7 +1309,7 @@ html[data-theme="dark"] .scan-card{background:#161c1d}html[data-theme="light"] .
 .mk-n{position:relative}.mk-del{display:block;margin:4px auto 0;width:24px;height:24px;padding:0;border-radius:50%;font-size:11px;line-height:1;border:1px solid var(--bd);background:transparent;color:var(--mu);cursor:pointer}
 .mk-add{margin-left:auto;padding:10px 14px;border-radius:999px;border:1.5px dashed var(--ac);background:transparent;color:var(--ac);font:inherit;font-size:14px;font-weight:700;cursor:pointer;box-shadow:none}
 .mk-add+#mkEditBtn{margin-left:0}
-#onb{position:fixed;inset:0;z-index:100000;display:none;flex-direction:column;align-items:center;justify-content:center;padding:max(14px,env(safe-area-inset-top)) 14px max(14px,env(safe-area-inset-bottom));background:radial-gradient(120% 80% at 50% 0%,color-mix(in srgb,var(--ac) 18%,var(--pbg,#f6f7fb)),var(--pbg,#f6f7fb));color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#onb{--ac:#0b7a6b;--pcard:#fff;--pbg:#f6f7fb;--pbd:#e3e6ef;--bd:#e3e6ef;--tx:#16202a;--mu:#5d6b78;color-scheme:light;position:fixed;inset:0;z-index:100000;display:none;flex-direction:column;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom));background:radial-gradient(120% 80% at 50% 0%,color-mix(in srgb,var(--ac) 18%,#f6f7fb),#f6f7fb);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 #onb.on{display:flex}
 #onb *{box-sizing:border-box}
 #onb .ob-top{display:flex;align-items:center;gap:10px;padding:max(14px,env(safe-area-inset-top)) 16px 10px}
@@ -1360,10 +1360,16 @@ html[data-theme="dark"] .scan-card{background:#161c1d}html[data-theme="light"] .
 body.onb-custom #onbCard{display:block}
 body.onb-custom #ttTools button[onclick^="loadPreset"]{display:none}
 
-#onb .ob-stage{position:relative;width:calc(100% - 96px);max-width:320px;height:min(590px,92%);margin:0 auto}
-#onb .ob-side{position:absolute;top:14px;writing-mode:vertical-rl;text-orientation:upright;letter-spacing:4px;font:800 15px/1 Corbel,'Segoe UI',system-ui,sans-serif;white-space:nowrap;pointer-events:none}
-#onb .ob-side.sL{right:calc(100% + 14px);color:var(--ac)}
-#onb .ob-side.sR{left:calc(100% + 14px);color:var(--tx);opacity:.85}
+#onb .ob-stage{position:relative;width:100%;max-width:560px;height:100%;margin:0 auto}
+#onb .ob-side{position:absolute;top:64px;writing-mode:vertical-rl;text-orientation:upright;letter-spacing:4px;font:800 14px/1 Corbel,'Segoe UI',system-ui,sans-serif;white-space:nowrap;pointer-events:none}
+#onb .ob-side.sL{left:8px;color:var(--ac)}
+#onb .ob-side.sR{right:8px;color:var(--tx);opacity:.85}
+#onb .ob-top,#onb .ob-body,#onb .ob-foot{padding-left:32px;padding-right:32px}
+#onb .ob-row input[type=time],#onb .ob-row input[type=date]{font-size:14px;padding-left:8px;padding-right:4px;min-width:0;flex:1}
+#onb .ob-row .dash{flex:none}
+#onb input[type=time]::-webkit-calendar-picker-indicator{display:none}
+#onb .ob-row input[type=time]{font-size:13.5px;padding-left:10px}
+#onb .ob-row .ob-rm{width:32px;height:32px}
 #onb .ob-card{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--pcard,#fff);border:1px solid color-mix(in srgb,var(--ac) 45%,var(--pbd,#e3e6ef));border-radius:22px;overflow:hidden;transform-origin:90% 100%;
   box-shadow:0 0 0 1px color-mix(in srgb,var(--ac) 25%,transparent),0 0 14px 2px color-mix(in srgb,var(--ac) 45%,transparent),0 0 38px 6px color-mix(in srgb,var(--ac) 22%,transparent)}
 #onb .ob-card.cur{z-index:3;transition:transform .38s cubic-bezier(.4,.1,.2,1),opacity .38s}
@@ -4591,7 +4597,7 @@ window.ttPhotoApply=function(){const pl=window.__ttPlan;if(!pl)return close();
 <script>
 /* Automatic safety copy of all data kept on this device, taken whenever the app version changes. */
 (function(){
-const APP_VER='v156',KEY='apAutoBak',VK='apVer';
+const APP_VER='v157',KEY='apAutoBak',VK='apVer';
 function snap(){const o={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k===KEY||k===VK)continue;o[k]=localStorage.getItem(k)}return o}
 try{const prev=localStorage.getItem(VK);
  if(prev!==APP_VER){const d=snap();if(Object.keys(d).length){let a=[];try{a=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){a=[]}
@@ -4734,7 +4740,7 @@ function cardHTML(st){const first=st===0,last=st===LAST();
 function draw(anim){const r=root(),st=O.step;
   let c=r.querySelector('.ob-card.cur');const sc=c&&c.querySelector('.ob-body')?c.querySelector('.ob-body').scrollTop:0;
   const left=Math.min(2,LAST()-st);
-  r.innerHTML=`<div class="ob-stage"><div class="ob-side sL">ATTENDANCE</div><div class="ob-side sR">ASSIGNMENT</div><div class="ob-card cur${anim?' in':''}">${cardHTML(st)}</div></div>`;
+  r.innerHTML=`<div class="ob-stage"><div class="ob-card cur${anim?' in':''}"><div class="ob-side sL">ATTENDANCE</div><div class="ob-side sR">ASSIGNMENT</div>${cardHTML(st)}</div></div>`;
   c=r.querySelector('.ob-card.cur');if(st===0)c.classList.add('tap');
   c.querySelector('.ob-body').scrollTop=sc;
   if(st===0)c.onclick=e=>{if(!e.target.closest('button'))X.next()}}
