@@ -4597,7 +4597,7 @@ window.ttPhotoApply=function(){const pl=window.__ttPlan;if(!pl)return close();
 <script>
 /* Automatic safety copy of all data kept on this device, taken whenever the app version changes. */
 (function(){
-const APP_VER='v157',KEY='apAutoBak',VK='apVer';
+const APP_VER='v159',KEY='apAutoBak',VK='apVer';
 function snap(){const o={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k===KEY||k===VK)continue;o[k]=localStorage.getItem(k)}return o}
 try{const prev=localStorage.getItem(VK);
  if(prev!==APP_VER){const d=snap();if(Object.keys(d).length){let a=[];try{a=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){a=[]}
@@ -4705,7 +4705,7 @@ function stepAsg(){const d=O.d,names=S.subs.map(x=>x.name);let h=`<h2>Assignment
   if(!names.length)return h+`<div class="ob-sec"><div class="ob-note">There are no subjects yet, so nothing to add. You can add them from the timetable later.</div></div>`;
   h+=`<div class="ob-sec"><h3>Add these subjects</h3>${names.map(n=>`<label class="ob-chk"><input type="checkbox" ${d.off.includes(n)?'':'checked'} onchange="ONBX.setOff('${E(n).replace(/'/g,"&#39;")}',!this.checked)"> ${E(n)}</label>`).join('')}</div>`;
   return h+`<div class="ob-sec"><label class="ob-chk"><input type="checkbox" ${d.asg?'checked':''} onchange="ONBX.setAsg(this.checked)"> Keep Assignments in sync when I edit the timetable</label></div>`}
-function stepWelcome(){return`<div class="ob-hero"><div class="em">📅</div><h1>Welcome!</h1><p class="mu">Let's set up your planner. Tap the card to begin. Every card can be skipped.</p></div><ul class="ob-list"><li><i>1</i><span><b>Timetable</b></span></li><li><i>2</i><span><b>Any extra class?</b></span></li><li><i>3</i><span><b>Holidays</b></span></li><li><i>4</i><span><b>Attendance target</b></span></li><li><i>5</i><span><b>Classes so far</b></span></li><li><i>6</i><span><b>Assignments</b></span></li><li><i>7</i><span><b>Theme</b></span></li></ul><div class="ob-tap">Tap anywhere on this card ›</div>`}
+function stepWelcome(){return`<div class="ob-hero"><div class="em">📅</div><h1>Welcome!</h1><p class="mu">Let's set up your planner. Tap the card to begin. Every card can be skipped.</p></div><ul class="ob-list"><li><i>1</i><span><b>Timetable</b></span></li><li><i>2</i><span><b>Any extra class?</b></span></li><li><i>3</i><span><b>Holidays</b></span></li><li><i>4</i><span><b>Attendance target</b></span></li><li><i>5</i><span><b>Classes so far</b></span></li><li><i>6</i><span><b>Assignments</b></span></li><li><i>7</i><span><b>Theme</b></span></li><li><i>8</i><span><b>Rules &amp; guidelines</b></span></li></ul><div class="ob-tap">Tap anywhere on this card ›</div>`}
 const DOWS=()=>ORD.map(dw=>`<option value="${dw}">${DN[dw]}</option>`).join('');
 function stepExtra(){const d=O.d;let h=`<h2>Any extra class?</h2><p class="mu">An extra or remedial class outside your normal timetable. Pick the day, then choose the subject in the period it happens.</p><div class="ob-yn"><button class="${d.xyes?'':'on'}" onclick="ONBX.setXyes(false)">No</button><button class="${d.xyes?'on':''}" onclick="ONBX.setXyes(true)">Yes</button></div>`;
   if(!d.xyes)return h+`<div class="ob-note">Nothing extra. You can add one later by editing the timetable.</div>`;
@@ -4728,11 +4728,20 @@ function commitAtt(){const d=O.d;ensureCustom();const zero=(d.attMode||'new')===
   S.subs.forEach(s=>{const x=d.subs.find(q=>q.id===s.id)||{};if(zero){s.att=0;s.tot=0}else{s.att=Math.max(0,+x.att||0);s.tot=Math.max(s.att,+x.tot||0)}});save();render()}
 function stepTheme(){const seen={},L=PALS.filter(p=>seen[p[0]]?0:(seen[p[0]]=1));const cur=S.pal||'teal';
   return`<h2>Pick a theme</h2><p class="mu">Tap a colour set. You can change it any time from the palette button.</p><div class="ob-pals">${L.map(([k,n,g])=>`<button class="${cur===k?'on':''}" onclick="ONBX.setPalX('${k}')"><i style="background:${g}"></i>${n}</button>`).join('')}</div>`}
-const LAST=()=>7;
-const STEPS=[stepWelcome,stepTT,stepExtra,stepHol,stepTarget,stepAtt,stepAsg,stepTheme];
+function stepRules(){const r=(i,t,b)=>`<div class="ob-sec" style="display:flex;gap:12px;align-items:flex-start"><span style="font-size:22px;line-height:1.1">${i}</span><div><b>${t}</b><div class="mu" style="margin:3px 0 0;font-size:13.5px">${b}</div></div></div>`;
+  return`<h2>Rules &amp; guidelines</h2><p class="mu">Read these once. They decide how your attendance is counted.</p>`
+  +r('👆','Double-tap Attend','Double-tap <b>Attend</b> on a class and it counts as <b>attended right now</b> and gets locked. Works for today\'s classes. You can undo it from the Edit button.')
+  +r('🙅','Double-tap Skip','Double-tap <b>Skip</b> to count that class as <b>missed</b> and lock it, the same way.')
+  +r('⏱️','Unmarked classes','When a class ends and you have not touched it, it counts as <b>attended</b>. Tap <b>Skip</b> only for the classes you miss.')
+  +r('🌴','Off button','If a day is suddenly off (strike, rain, teacher absent), tap <b>Off</b> in the Today card. That day is marked as a holiday and <b>no classes are counted</b>, even ones already counted that day are taken back. Tap Off again to undo it.')
+  +r('📅','Holidays &amp; Sundays','Holidays and Sundays are never counted. Keep the Holidays list up to date.')
+  +r('🎯','Target','Your target % (set earlier) decides how many classes you can still skip. It is a guide, so check with your college rules.')
+  +r('✅','Verify photo readings','If you filled a timetable or holidays from a photo, check every name, time and date before relying on them.')}
+const LAST=()=>8;
+const STEPS=[stepWelcome,stepTT,stepExtra,stepHol,stepTarget,stepAtt,stepAsg,stepTheme,stepRules];
 let busy=false;
 function cardHTML(st){const first=st===0,last=st===LAST();
-  const dots=[1,2,3,4,5,6,7].map(i=>`<i class="${st>=i?'on':''}"></i>`).join('');
+  const dots=[1,2,3,4,5,6,7,8].map(i=>`<i class="${st>=i?'on':''}"></i>`).join('');
   let foot;
   if(first)foot=`<button class="ob-skip" onclick="event.stopPropagation();ONBX.skipAll()">Skip setup</button><button class="p" onclick="event.stopPropagation();ONBX.next()">Start</button>`;
   else foot=`${st>(O.edit?1:0)?`<button onclick="ONBX.back()">Back</button>`:''}<button class="ob-skip" onclick="ONBX.skip()">Skip</button><button class="p" onclick="ONBX.next()">${last?(O.edit?'Save':'Finish'):'Next'}</button>`;
